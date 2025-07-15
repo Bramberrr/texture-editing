@@ -1,0 +1,110 @@
+{
+  "glossy": [
+    "A picture of a glossy texture",
+    "A picture of a shiny texture", 
+    "A picture of a surface reflecting point light sources", 
+    "A picture of a texture with sharp highlights", 
+    "A picture of a highly-skewed surface", 
+    "A picture of a wet texture reflecting specular highlights", 
+    "A picture of a mirror-like texture"
+  ],
+  "matte": [
+    "A picture of a clay-like diffuse texture", 
+    "A picture of a matte surface", 
+    "A picture of a texture under uniform lighting", 
+    "A picture of a flat-colored surface without reflection", 
+    "A picture of a matte surface with soft edges", 
+    "A picture of a matte low contrast surface", 
+    "A picture of a rough matte texture"
+  ],
+  "rough": [
+    "A picture of a coarse, uneven texture",
+    "A picture of a texture with visible surface irregularities",
+    "A picture of a scratched or grainy texture",
+    "A picture of a concrete or sandpaper-like texture",
+    "A picture of a jagged and bumpy texture",
+    "A picture of a highly textured rough surface",
+    "A picture of a rough texture with raised particles"
+  ],
+  "smooth": [
+    "A picture of a perfectly even, polished texture",
+    "A picture of a texture with no bumps or roughness",
+    "A picture of a silky or slippery surface",
+    "A picture of a soft and smooth texture",
+    "A picture of a uniform, glass-like texture",
+    "A picture of a smooth marble or plastic texture",
+    "A picture of a featureless, clean surface"
+  ],
+  "high_contrast": [
+    "A picture of a texture with strong light and dark areas",
+    "A picture of a texture with sharp tonal transitions",
+    "A picture of a bold, high-contrast texture",
+    "A picture of a texture with dramatic lighting",
+    "A picture of a texture with high dynamic range",
+    "A picture of a texture with striking visual contrast",
+    "A picture of a pattern with deep blacks and bright highlights"
+  ],
+  "low_contrast": [
+    "A picture of a texture with soft, muted shading",
+    "A picture of a subtle-toned texture",
+    "A picture of a washed-out texture",
+    "A picture of a flat, low-contrast surface",
+    "A picture of a texture with minimal light-dark difference",
+    "A picture of a texture with gentle tonal shifts",
+    "A picture of a uniformly lit, low contrast surface"
+  ],
+  "regular": [
+    "a lattice-structured texture", 
+    "a texture with aligned stripes", 
+    "a well-organized texture", 
+    "a graph-paper-like texture", 
+    "a texture with haphazard detail", 
+    "a striped and evenly spaced texture", 
+    "a brick-like texture "
+  ],
+  "stochastic": [
+    "a texture with scattered granules", 
+    "a clockwork-patterned texture", 
+    "a texture with fractal repetition", 
+    "a texture with randomized arrangements", 
+    "a texture made of jumbled shapes", 
+    "a texture with random elements", 
+    "a texture with spatial disorder"
+  ],
+  "large_scale": [
+    "a texture full of visual complexity", 
+    "a cluttered fine-grain texture", 
+    "a texture with intricate patterns", 
+    "a texture with dense structural elements", 
+    "a texture made of tightly nested patterns", 
+    "a tightly woven texture", 
+    "a texture with interlocking fine patterns"
+  ],
+  "small_scale": [
+    "a scale-intensive texture", 
+    "a texture with hairline features", 
+    "a finely meshed texture", 
+    "a high-resolution texture", 
+    "a texture with concentrated visual density", 
+    "a layered fine texture", 
+    "a texture exhibiting sub-patterns"
+  ],
+  "grayscale": [
+    "A picture of a grayscale texture",
+    "A picture of a black-and-white texture",
+    "A picture of a texture with only gray tones",
+    "A picture of a desaturated, neutral texture",
+    "A picture of a texture without any hue",
+    "A picture of a monochrome texture in shades of gray",
+    "A picture of a texture with no chromatic content"
+  ],
+  "saturated_color": [
+    "A picture of a texture with bold, intense color",
+    "A picture of a highly saturated texture",
+    "A picture of a vivid and deep-colored surface",
+    "A picture of a texture with pure pigment colors",
+    "A picture of an eye-catching, colorful texture",
+    "A picture of a texture with rich, vivid tones",
+    "A picture of a surface bursting with saturation"
+  ]
+}

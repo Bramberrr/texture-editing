@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head><title>Select Texture</title></head>
+<body>
+<h2>Select a Texture to Edit ({{ domain }})</h2>
+<form method="get">
+  <button type="submit">🔄 Refresh 50 Random Textures</button>
+</form>
+<div style="display: flex; flex-wrap: wrap;">
+  {% for item in texture_items %}
+    <div style="margin: 10px; text-align: center;">
+      <a href="/edit/{{ item.domain }}/{{ item.index }}">
+        <img src="/{{ item.img }}" width="128" height="128"><br>
+        {{ item.index }}
+      </a>
+    </div>
+  {% endfor %}
+</div>
+</body>
+</html>

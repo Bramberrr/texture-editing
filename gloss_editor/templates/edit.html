@@ -1,0 +1,123 @@
+<!-- edit.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Edit {{ filename }}</title>
+  <style>
+    .method-block {
+      display: inline-block;
+      margin: 0 20px;
+      text-align: center;
+    }
+    .slider-value {
+      font-size: 14px;
+      margin-top: 4px;
+    }
+  </style>
+  <script>
+    function updateGloss(method) {
+      const s = document.getElementById(method + "_slider").value;
+      fetch(`/api/update_image/?index={{ index }}&method=${method}&strength=${s}&domain={{ domain }}`)
+        .then(r => r.json()).then(data => {
+          document.getElementById(method + "_img").src = data.img_url;
+          document.getElementById(method + "_gloss").innerText = data.sim_glossy;
+          document.getElementById(method + "_matte").innerText = data.sim_matte;
+          document.getElementById(method + "_val").innerText = s;
+        });
+    }
+
+    function updateRough(method) {
+      const s = document.getElementById("rough_" + method + "_slider").value;
+      fetch(`/api/update_image_rough/?index={{ index }}&method=${method}&strength=${s}&domain={{ domain }}`)
+        .then(r => r.json()).then(data => {
+          document.getElementById("rough_" + method + "_img").src = data.img_url;
+          document.getElementById("rough_" + method + "_rough").innerText = data.sim_rough;
+          document.getElementById("rough_" + method + "_smooth").innerText = data.sim_smooth;
+          document.getElementById("rough_" + method + "_val").innerText = s;
+        });
+    }
+  </script>
+</head>
+<body>
+  <h1>Editing {{ index }} - {{ filename }}</h1>
+
+  <!-- Original Preview -->
+  <div style="text-align: center; margin-bottom: 20px;">
+    <h2>Original Image</h2>
+    <img src="/static/{{ preview_path }}/{{ filename }}.png" width="256" height="256">
+    <div style="margin-top: 10px;">
+      Glossy: <span>{{ original_scores.glossy }}</span> |
+      Matte: <span>{{ original_scores.matte }}</span> |
+      Rough: <span>{{ original_scores.rough }}</span> |
+      Smooth: <span>{{ original_scores.smooth }}</span>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- Gloss Editor -->
+  <h2>Gloss Editing</h2>
+  <div style="display: flex; justify-content: center;">
+    {% for method in methods %}
+    <div class="method-block">
+      <h3>{{ method|title }}</h3>
+      <img id="{{ method }}_img" width="256" height="256" src="/static/{{ preview_path }}/{{ filename }}.png">
+      <br>
+      <input type="range" id="{{ method }}_slider" min="-20" max="20" step="0.1" value="0"
+             oninput="updateGloss('{{ method }}')">
+      <div class="slider-value">Value: <span id="{{ method }}_val">0</span></div>
+      <div>Glossy: <span id="{{ method }}_gloss">--</span></div>
+      <div>Matte: <span id="{{ method }}_matte">--</span></div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <hr>
+
+  <!-- Roughness Editor -->
+  <h2>Roughness Editing</h2>
+  <div style="display: flex; justify-content: center;">
+    {% for method in rough_methods %}
+    <div class="method-block">
+      <h3>{{ method|title }}</h3>
+      <img id="rough_{{ method }}_img" width="256" height="256" src="/static/{{ preview_path }}/{{ filename }}.png">
+      <br>
+      <input type="range" id="rough_{{ method }}_slider" min="-20" max="20" step="0.1" value="0"
+             oninput="updateRough('{{ method }}')">
+      <div class="slider-value">Value: <span id="rough_{{ method }}_val">0</span></div>
+      <div>Rough: <span id="rough_{{ method }}_rough">--</span></div>
+      <div>Smooth: <span id="rough_{{ method }}_smooth">--</span></div>
+    </div>
+    {% endfor %}
+  </div>
+  <h3>Answer the following questions:</h3>
+
+<div>
+  <p>Can this be made glossier? 
+    <button onclick="submitAnswer('glossier', true)">Yes</button>
+    <button onclick="submitAnswer('glossier', false)">No</button>
+  </p>
+  <p>Can this be made more matte? 
+    <button onclick="submitAnswer('matte', true)">Yes</button>
+    <button onclick="submitAnswer('matte', false)">No</button>
+  </p>
+  <p>Can this be made rougher? 
+    <button onclick="submitAnswer('rough', true)">Yes</button>
+    <button onclick="submitAnswer('rough', false)">No</button>
+  </p>
+  <p>Can this be made smoother? 
+    <button onclick="submitAnswer('smooth', true)">Yes</button>
+    <button onclick="submitAnswer('smooth', false)">No</button>
+  </p>
+</div>
+
+<script>
+  function submitAnswer(attr, value) {
+    fetch(`/api/submit_answer/?index={{ index }}&domain={{ domain }}&attribute=${attr}&value=${value}`)
+      .then(r => r.json())
+      .then(data => alert(data.message));
+  }
+</script>
+
+</body>
+</html>
