@@ -15,12 +15,21 @@ def select_skin_type(request):
 
 # Dataset browser view
 def home(request, domain):
+    tmp_dir = 'static/tmp'
+    if os.path.exists(tmp_dir):
+        for f in os.listdir(tmp_dir):
+            f_path = os.path.join(tmp_dir, f)
+            if os.path.isfile(f_path):
+                os.remove(f_path)
     if domain == 'nuur':
         pt_dir = 'real_latent'
         preview_dir = 'static/previews'
     elif domain.startswith('skins_'):
         pt_dir = os.path.join('real_latent', domain.replace('skins_', '') + '_skin')
         preview_dir = os.path.join('static/previews', domain.replace('skins_', '') + '_skin')
+    elif domain == 'generated':
+        pt_dir = 'real_latent/generated'
+        preview_dir = 'static/previews/generated'
     else:
         raise ValueError(f"Invalid domain: {domain}")
 
@@ -33,18 +42,27 @@ def home(request, domain):
     return render(request, 'home.html', {"texture_items": texture_items, "domain": domain})
 
 def edit_texture(request, domain, index):
-    pt_dir = 'real_latent' if domain == 'nuur' else os.path.join('real_latent', domain.replace('skins_', '') + '_skin')
+    if domain == 'nuur':
+        pt_dir = 'real_latent'
+    elif domain.startswith('skins_'):
+        pt_dir = os.path.join('real_latent', domain.replace('skins_', '') + '_skin')
+    elif domain == 'generated':
+        pt_dir = 'real_latent/generated'
+    else:
+        raise ValueError(f"Invalid domain: {domain}")
     pt_files = sorted([f for f in os.listdir(pt_dir) if f.endswith('.pt')])
     filename = pt_files[int(index)]
 
-    _, sim_glossy, sim_matte = run_inference(filename, method="none", strength=0, pt_dir=pt_dir)
-    _, sim_rough, sim_smooth = run_inference_roughness(filename, method="none", strength=0, pt_dir=pt_dir)
+    _, sim_glossy, sim_matte,_,_,_ = run_inference(filename, method="none", strength=0, pt_dir=pt_dir)
+    _, sim_rough, sim_smooth,_,_,_ = run_inference_roughness(filename, method="none", strength=0, pt_dir=pt_dir)
     # In edit_texture() in views.py
     tone = domain.replace('skins_', '') if domain.startswith('skins_') else None
     if domain == 'nuur':
         preview_path = f"previews"
-    else:
+    elif domain.startswith('skins_'):
         preview_path = f"previews/{tone}_skin"
+    elif domain == 'generated':
+        preview_path = 'previews/generated'
     return render(request, "edit.html", {
         "index": index,
         "filename": filename,
@@ -66,15 +84,25 @@ def update_image(request):
     strength = float(request.GET.get("strength"))
     domain = request.GET.get("domain")
 
-    pt_dir = 'real_latent' if domain == 'nuur' else os.path.join('real_latent', domain.replace('skins_', '') + '_skin')
+    if domain == 'nuur':
+        pt_dir = 'real_latent'
+    elif domain.startswith('skins_'):
+        pt_dir = os.path.join('real_latent', domain.replace('skins_', '') + '_skin')
+    elif domain == 'generated':
+        pt_dir = 'real_latent/generated'
+    else:
+        raise ValueError(f"Invalid domain: {domain}")
     pt_files = sorted([f for f in os.listdir(pt_dir) if f.endswith('.pt')])
     filename = pt_files[index]
 
-    img_url, sim_glossy, sim_matte = run_inference(filename, method, strength, pt_dir)
+    img_url, sim_glossy, sim_matte, sim_img, stsim, sw = run_inference(filename, method, strength, pt_dir)
     return JsonResponse({
         "img_url": img_url,
         "sim_glossy": round(sim_glossy, 3),
-        "sim_matte": round(sim_matte, 3)
+        "sim_matte": round(sim_matte, 3),
+        "sim_img": round(sim_img, 3),
+        "stsim": round(stsim, 3),
+        "sw": round(sw, 3)
     })
 
 def update_image_rough(request):
@@ -83,54 +111,85 @@ def update_image_rough(request):
     strength = float(request.GET.get("strength"))
     domain = request.GET.get("domain")
 
-    pt_dir = 'real_latent' if domain == 'nuur' else os.path.join('real_latent', domain.replace('skins_', '') + '_skin')
+    if domain == 'nuur':
+        pt_dir = 'real_latent'
+    elif domain.startswith('skins_'):
+        pt_dir = os.path.join('real_latent', domain.replace('skins_', '') + '_skin')
+    elif domain == 'generated':
+        pt_dir = 'real_latent/generated'
+    else:
+        raise ValueError(f"Invalid domain: {domain}")
     pt_files = sorted([f for f in os.listdir(pt_dir) if f.endswith('.pt')])
     filename = pt_files[index]
 
-    img_url, sim_rough, sim_smooth = run_inference_roughness(filename, method, strength, pt_dir)
+    img_url, sim_rough, sim_smooth, sim_img, stsim, sw = run_inference_roughness(filename, method, strength, pt_dir)
     return JsonResponse({
         "img_url": img_url,
         "sim_rough": round(sim_rough, 3),
-        "sim_smooth": round(sim_smooth, 3)
+        "sim_smooth": round(sim_smooth, 3),
+        "sim_img": round(sim_img, 3),
+        "stsim": round(stsim, 3),
+        "sw": round(sw, 3)
     })
 
+import os
 import csv
+from django.http import JsonResponse
 
 ANSWER_CSV = "static/answers.csv"
+CSV_FIELDS = [
+    "key",
+    "glossier_possible", "matte_possible", "rough_possible", "smooth_possible",
+    "best_glossiness_method", "best_roughness_method"
+]
+
+# Map from front-end field to CSV field
+ALIAS_MAP = {
+    "glossier": "glossier_possible",
+    "matte": "matte_possible",
+    "rough": "rough_possible",
+    "smooth": "smooth_possible",
+    "glossiness": "best_glossiness_method",
+    "roughness": "best_roughness_method",
+}
 
 def submit_answer(request):
     index = request.GET.get("index")
     domain = request.GET.get("domain")
-    attr = request.GET.get("attribute")
-    value = request.GET.get("value")
+    attr = request.GET.get("attribute")     # e.g., 'glossiness' or 'glossier'
+    value = request.GET.get("value")        # e.g., 'clip' or 'true'
 
     key = f"{domain}_{index}"
-    updated = False
-    rows = []
+    target_field = ALIAS_MAP.get(attr)
 
-    # Load old answers
+    if not target_field:
+        return JsonResponse({"error": f"Invalid attribute: {attr}"}, status=400)
+
+    # Load existing rows
+    rows = []
     if os.path.exists(ANSWER_CSV):
         with open(ANSWER_CSV, 'r', newline='') as f:
             reader = csv.DictReader(f)
             rows = list(reader)
 
-    # Check for existing entry
+    # Search for existing row
+    updated = False
     for row in rows:
         if row["key"] == key:
-            row[attr] = value
+            row[target_field] = value
             updated = True
             break
 
-    # Add new entry if not found
     if not updated:
-        new_row = {"key": key, "glossier": "", "matte": "", "rough": "", "smooth": ""}
-        new_row[attr] = value
+        new_row = {field: "" for field in CSV_FIELDS}
+        new_row["key"] = key
+        new_row[target_field] = value
         rows.append(new_row)
 
-    # Write back
+    # Save updated CSV
     with open(ANSWER_CSV, 'w', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=["key", "glossier", "matte", "rough", "smooth"])
+        writer = csv.DictWriter(f, fieldnames=CSV_FIELDS)
         writer.writeheader()
         writer.writerows(rows)
 
-    return JsonResponse({"message": f"Saved answer: {attr} → {value}"})
+    return JsonResponse({"message": f"Saved {target_field} = {value}"})

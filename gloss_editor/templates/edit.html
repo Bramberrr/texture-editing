@@ -16,26 +16,33 @@
   </style>
   <script>
     function updateGloss(method) {
-      const s = document.getElementById(method + "_slider").value;
-      fetch(`/api/update_image/?index={{ index }}&method=${method}&strength=${s}&domain={{ domain }}`)
-        .then(r => r.json()).then(data => {
-          document.getElementById(method + "_img").src = data.img_url;
-          document.getElementById(method + "_gloss").innerText = data.sim_glossy;
-          document.getElementById(method + "_matte").innerText = data.sim_matte;
-          document.getElementById(method + "_val").innerText = s;
-        });
-    }
+    const s = document.getElementById(method + "_slider").value;
+    fetch(`/api/update_image/?index={{ index }}&method=${method}&strength=${s}&domain={{ domain }}`)
+      .then(r => r.json()).then(data => {
+        document.getElementById(method + "_img").src = data.img_url;
+        document.getElementById(method + "_gloss").innerText = data.sim_glossy;
+        document.getElementById(method + "_matte").innerText = data.sim_matte;
+        document.getElementById(method + "_val").innerText = s;
+        document.getElementById(method + "_simimg").innerText = data.sim_img;
+        document.getElementById(method + "_stsim").innerText = data.stsim;
+        document.getElementById(method + "_sw").innerText = data.sw;
+      });
+  }
+
 
     function updateRough(method) {
-      const s = document.getElementById("rough_" + method + "_slider").value;
-      fetch(`/api/update_image_rough/?index={{ index }}&method=${method}&strength=${s}&domain={{ domain }}`)
-        .then(r => r.json()).then(data => {
-          document.getElementById("rough_" + method + "_img").src = data.img_url;
-          document.getElementById("rough_" + method + "_rough").innerText = data.sim_rough;
-          document.getElementById("rough_" + method + "_smooth").innerText = data.sim_smooth;
-          document.getElementById("rough_" + method + "_val").innerText = s;
-        });
-    }
+    const s = document.getElementById("rough_" + method + "_slider").value;
+    fetch(`/api/update_image_rough/?index={{ index }}&method=${method}&strength=${s}&domain={{ domain }}`)
+      .then(r => r.json()).then(data => {
+        document.getElementById("rough_" + method + "_img").src = data.img_url;
+        document.getElementById("rough_" + method + "_rough").innerText = data.sim_rough;
+        document.getElementById("rough_" + method + "_smooth").innerText = data.sim_smooth;
+        document.getElementById("rough_" + method + "_val").innerText = s;
+        document.getElementById("rough_" + method + "_simimg").innerText = data.sim_img;
+        document.getElementById("rough_" + method + "_stsim").innerText = data.stsim;
+        document.getElementById("rough_" + method + "_sw").innerText = data.sw;
+      });
+  }
   </script>
 </head>
 <body>
@@ -63,11 +70,14 @@
       <h3>{{ method|title }}</h3>
       <img id="{{ method }}_img" width="256" height="256" src="/static/{{ preview_path }}/{{ filename }}.png">
       <br>
-      <input type="range" id="{{ method }}_slider" min="-20" max="20" step="0.1" value="0"
+      <input type="range" id="{{ method }}_slider" min="-10" max="10" step="0.1" value="0"
              oninput="updateGloss('{{ method }}')">
       <div class="slider-value">Value: <span id="{{ method }}_val">0</span></div>
       <div>Glossy: <span id="{{ method }}_gloss">--</span></div>
       <div>Matte: <span id="{{ method }}_matte">--</span></div>
+      <div>Sim Img: <span id="{{ method }}_simimg">--</span></div>
+      <div>STSIM: <span id="{{ method }}_stsim">--</span></div>
+      <div>SW: <span id="{{ method }}_sw">--</span></div>
     </div>
     {% endfor %}
   </div>
@@ -82,16 +92,20 @@
       <h3>{{ method|title }}</h3>
       <img id="rough_{{ method }}_img" width="256" height="256" src="/static/{{ preview_path }}/{{ filename }}.png">
       <br>
-      <input type="range" id="rough_{{ method }}_slider" min="-20" max="20" step="0.1" value="0"
+      <input type="range" id="rough_{{ method }}_slider" min="-10" max="10" step="0.1" value="0"
              oninput="updateRough('{{ method }}')">
       <div class="slider-value">Value: <span id="rough_{{ method }}_val">0</span></div>
       <div>Rough: <span id="rough_{{ method }}_rough">--</span></div>
       <div>Smooth: <span id="rough_{{ method }}_smooth">--</span></div>
+      <div>Sim Img: <span id="rough_{{ method }}_simimg">--</span></div>
+            <div>STSIM: <span id="rough_{{ method }}_stsim">--</span></div>
+      <div>SW: <span id="rough_{{ method }}_sw">--</span></div>
     </div>
     {% endfor %}
   </div>
   <h3>Answer the following questions:</h3>
 
+<!-- Yes/No Questions -->
 <div>
   <p>Can this be made glossier? 
     <button onclick="submitAnswer('glossier', true)">Yes</button>
@@ -111,6 +125,21 @@
   </p>
 </div>
 
+<!-- Best Method Questions -->
+<h3>Which method best enhances the attributes?</h3>
+<div>
+  <p>Best method for glossiness:</p>
+  <button onclick="submitAnswer('glossiness', 'bs')">BS</button>
+  <button onclick="submitAnswer('glossiness', 'scurve')">SCurve</button>
+  <button onclick="submitAnswer('glossiness', 'clip')">CLIP</button>
+</div>
+
+<div>
+  <p>Best method for roughness:</p>
+  <button onclick="submitAnswer('roughness', 'bs')">BS</button>
+  <button onclick="submitAnswer('roughness', 'clip')">CLIP</button>
+</div>
+
 <script>
   function submitAnswer(attr, value) {
     fetch(`/api/submit_answer/?index={{ index }}&domain={{ domain }}&attribute=${attr}&value=${value}`)
@@ -118,6 +147,7 @@
       .then(data => alert(data.message));
   }
 </script>
+
 
 </body>
 </html>
