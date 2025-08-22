@@ -284,8 +284,8 @@ def is_natural(x, threshold=0.5):
     p_natural = probs[:, ckpt["classes"].index("natural")]
     return (p_natural >= threshold).cpu().tolist()
 
-s_new = torch.load("deltas_layers9_15.pt")
-s_new_12 = torch.load("delta_layers12_15.pt")
+s_new = torch.load("trained_dirs/deltas_layers9_15.pt")
+s_new_12 = torch.load("trained_dirs/delta_layers12_15.pt")
 
 def CLIP_editing_any(generator, attr, latent_s, weights_deltas, alpha, device):
     s_dir = torch.zeros_like(latent_s).to(device)
