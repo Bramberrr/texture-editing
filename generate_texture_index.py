@@ -2,7 +2,7 @@ import os
 import json
 
 # Folder containing all .pt files and subfolders
-latent_dir = "real_latent"
+latent_dir = "real_latent_9475"
 output_json = "gloss_editor/texture_index.json"
 
 # Ensure the folder exists

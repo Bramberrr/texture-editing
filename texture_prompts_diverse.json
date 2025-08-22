@@ -1,0 +1,642 @@
+{
+  "glossy": {
+  "positive": [
+    "a smooth surface with a mirror-like finish",
+    "a surface reflecting its surroundings clearly",
+    "a sleek and polished texture with uniform sheen",
+    "a surface with broad, soft light reflections",
+    "a high-gloss finish similar to polished marble",
+    "a uniformly reflective surface with depth",
+    "a shiny coating that gives a continuous wet look"
+  ],
+  "negative": [
+    "a clay-like diffuse texture",
+    "a matte surface without specular highlights",
+    "a surface under soft uniform lighting with no gleam",
+    "a flat-colored texture without reflection",
+    "a powdery matte appearance",
+    "a low-contrast diffuse surface",
+    "a rough matte texture that absorbs light"
+  ]
+  },
+  "rough": {
+    "positive": [
+      "a coarse, uneven texture with grit",
+      "a surface with visible pits and burrs",
+      "a scratched, grainy, abrasive finish",
+      "a concrete or sandpaper-like texture",
+      "a jagged, bumpy surface with protrusions",
+      "a highly textured rough surface with raised particles",
+      "a rugged, scuffed, weathered texture"
+    ],
+    "negative": [
+      "a perfectly even, polished texture",
+      "a surface with no bumps or roughness",
+      "a silky, slippery finish",
+      "a soft and smooth texture",
+      "a uniform glass-like surface",
+      "a sleek marble or polished plastic surface",
+      "a featureless, clean, smooth plane"
+    ]
+  },
+  "highlighted": {
+    "positive": [
+      "a texture with strong white specular highlights",
+      "bright pinpoint highlights scattered across the surface",
+      "a surface with crisp hotspots from direct lighting",
+      "glare streaks emphasizing the material form",
+      "a bright sheen with small specular flares",
+      "pronounced highlight bands aligned with curvature",
+      "high-intensity glints on the texture"
+    ],
+    "negative": [
+      "a texture with no visible highlights",
+      "a dull surface lit only by diffuse ambient light",
+      "a uniformly lit surface without bright spots",
+      "a matte texture under soft lighting",
+      "no shimmering or hotspots anywhere",
+      "subdued lighting with flattened specular response",
+      "a low-sheen surface without glints"
+    ]
+  },
+  "shadowed": {
+    "positive": [
+      "a texture with deep cast shadows between elements",
+      "strong occlusion shadows accenting relief",
+      "a surface with dark shaded crevices",
+      "high-contrast shading emphasizing depth",
+      "pronounced self-shadowing across features",
+      "hard-edged shadows from directional light",
+      "deep shadow pockets under raised details"
+    ],
+    "negative": [
+      "a texture with minimal shadowing",
+      "a flatly lit surface with no occlusion",
+      "soft ambient light removing shadows",
+      "uniform brightness across the surface",
+      "no visible depth due to lack of shade",
+      "balanced fill light eliminating dark regions",
+      "a shadow-free evenly illuminated texture"
+    ]
+  },
+  "contrast": {
+    "positive": [
+      "a high-contrast texture with bright whites and deep blacks",
+      "a surface with strong tonal separation",
+      "bold light-dark patterning in the texture",
+      "crisp edges and striking luminance differences",
+      "punchy contrast that makes details pop",
+      "dramatic intensity range across the surface",
+      "a texture with vivid tonal extremes"
+    ],
+    "negative": [
+      "a low-contrast, murky texture",
+      "soft tonal transitions with little separation",
+      "a flat image with compressed dynamic range",
+      "muted lights and lifted shadows",
+      "washed-out surface with gentle gradients",
+      "subtle, nearly uniform brightness",
+      "a texture with minimal tonal variance"
+    ]
+  },
+  "saturation": {
+    "positive": [
+      "a richly saturated, vivid texture",
+      "intense colors with strong chroma",
+      "bold, vibrant hues dominating the surface",
+      "a lively, high-saturation palette",
+      "popping colors with very little grayness",
+      "eye-catching, deeply colored texture",
+      "strongly saturated pigments across the image"
+    ],
+    "negative": [
+      "a desaturated, muted texture",
+      "washed-out colors tending toward gray",
+      "soft, pale tones with low chroma",
+      "subdued coloration with restrained intensity",
+      "faded hues lacking vibrancy",
+      "a nearly monochrome, dull appearance",
+      "a colorless, grayish texture"
+    ]
+  },
+  "warm_toned": {
+    "positive": [
+      "a warm-toned texture with amber and gold hues",
+      "reddish and orange casts across the surface",
+      "a cozy palette leaning toward warm colors",
+      "sunlit warmth with golden highlights",
+      "a coppery, toasty color balance",
+      "a sienna and ochre dominated texture",
+      "a warm glaze over the material"
+    ],
+    "negative": [
+      "a cool-toned texture with bluish cast",
+      "icy colors leaning toward cyan and blue",
+      "a cold palette with steel-like tones",
+      "cool daylight balance suppressing warmth",
+      "teal and slate dominating the color",
+      "frosty neutrals with minimal warmth",
+      "a distinctly cold, blue-shifted texture"
+    ]
+  },
+  "brightness": {
+    "positive": [
+      "an overall bright, luminous texture",
+      "a high-key surface with lifted midtones",
+      "a light-toned image with airy exposure",
+      "a surface with elevated brightness throughout",
+      "a texture that feels sunlit and radiant",
+      "whitish values dominating the frame",
+      "a bright, clean appearance"
+    ],
+    "negative": [
+      "a dim, underexposed texture",
+      "a low-key surface with deep values",
+      "a dark, moody image with low brightness",
+      "subdued illumination across the texture",
+      "a shadowy, low-light look",
+      "predominantly dark tones throughout",
+      "a gloomy, low-luminance surface"
+    ]
+  },
+  "fine_scale": {
+    "positive": [
+      "a texture with very fine micro-detail",
+      "dense high-frequency detail across the surface",
+      "minute granularity visible upon close inspection",
+      "delicate microstructure and tiny ridges",
+      "ultra-fine stippling in the material",
+      "fine-grained pattern with subtle relief",
+      "crisp microtexture at small scales"
+    ],
+    "negative": [
+      "a texture lacking fine detail",
+      "a smooth surface without microstructure",
+      "broad low-frequency areas with no granularity",
+      "soft, featureless expanses",
+      "macro-only patterning without microtexture",
+      "blurred small-scale features",
+      "an absence of tiny details"
+    ]
+  },
+  "regular": {
+    "positive": [
+      "a highly regular, repeating texture pattern",
+      "evenly spaced motifs forming a grid",
+      "consistent periodic structure across the surface",
+      "uniform repetition with minimal jitter",
+      "a tidy, ordered arrangement of elements",
+      "predictable patterning with constant spacing",
+      "precise tiling with strict regularity"
+    ],
+    "negative": [
+      "an irregular, non-repeating texture",
+      "stochastic variation without periodicity",
+      "jittery spacing and uneven repetition",
+      "random arrangement of elements",
+      "a chaotic, nonuniform surface",
+      "organic variation without clear pattern",
+      "a disorderly, non-periodic texture"
+    ]
+  },
+  "wet": {
+    "positive": [
+      "a wet texture with fresh moisture",
+      "a damp, water-coated surface",
+      "beads of water forming on the material",
+      "a slick, slippery wet sheen",
+      "darkened patches from absorbed liquid",
+      "saturated look with surface wetness",
+      "a just-splashed wet finish"
+    ],
+    "negative": [
+      "a completely dry texture",
+      "no signs of moisture or dampness",
+      "a parched, dehydrated surface",
+      "dry patches with chalky look",
+      "bone-dry appearance everywhere",
+      "a moisture-free matte surface",
+      "arid, desiccated texture"
+    ]
+  },
+  "metallic": {
+    "positive": [
+      "a metallic texture with conductive sheen",
+      "brushed metal with directional grain",
+      "polished steel-like reflectivity",
+      "hammered metal facets shimmering",
+      "oxidized metal with glints",
+      "chromelike specularity and hardness",
+      "a metal surface reflecting highlights"
+    ],
+    "negative": [
+      "a non-metallic organic surface",
+      "no metallic glint or ring",
+      "plastic-like reflections instead of metal",
+      "soft, diffuse non-metal appearance",
+      "wooden or stone-like, not metallic",
+      "lack of metallic specular behavior",
+      "a non-conductive, matte surface"
+    ]
+  },
+  "translucent": {
+    "positive": [
+      "a translucent material passing soft light",
+      "subsurface scattering through the texture",
+      "glowing edges where light enters",
+      "milky translucency with diffuse transmission",
+      "a semi-transparent surface",
+      "backlit glow through the material",
+      "translucent waxlike appearance"
+    ],
+    "negative": [
+      "an opaque material blocking light",
+      "no subsurface transmission visible",
+      "solid, non-translucent surface",
+      "light does not pass through",
+      "a dense, fully opaque texture",
+      "no glow or internal light bleeding",
+      "a hard, light-blocking material"
+    ]
+  },
+  "speckled": {
+    "positive": [
+      "a speckled texture with scattered dots",
+      "freckles of pigment across the surface",
+      "random tiny spots forming a pattern",
+      "peppered grains dotted throughout",
+      "stippling marks dispersed widely",
+      "spattered flecks in the texture",
+      "a sprinkled, speckled appearance"
+    ],
+    "negative": [
+      "a texture without speckles",
+      "no spots or dots present",
+      "continuous tone without flecks",
+      "unspotted, even coloration",
+      "no stippling or peppering visible",
+      "smooth fields with no dots",
+      "a speckle-free surface"
+    ]
+  },
+  "iridescent": {
+    "positive": [
+      "an iridescent texture shifting color with angle",
+      "oil-slick rainbow interference hues",
+      "pearlescent sheen changing with view",
+      "soap-bubble spectral highlights",
+      "holographic shimmer across the surface",
+      "color-shifting nacre-like finish",
+      "a prismatic, angle-dependent appearance"
+    ],
+    "negative": [
+      "a non-iridescent, solid-colored surface",
+      "no angle-dependent color shifts",
+      "flat color without interference",
+      "no pearlescent behavior",
+      "constant hue regardless of view",
+      "matte finish without rainbows",
+      "a uniform, non-holographic look"
+    ]
+  },
+  "texture_depth": {
+    "positive": [
+      "a texture with strong depth and relief",
+      "pronounced height variations across the surface",
+      "deep grooves and tall ridges",
+      "high-relief sculpted material",
+      "thick embossing creating shadows",
+      "substantial depth giving 3D presence",
+      "a deeply contoured texture"
+    ],
+    "negative": [
+      "a nearly flat, shallow texture",
+      "minimal relief with tiny variations",
+      "smooth surface with little height",
+      "low-relief, barely raised details",
+      "flat embossing with no depth",
+      "a thin, superficial contour",
+      "an almost planar texture"
+    ]
+  },
+  "sharp": {
+    "positive": [
+      "a texture with crisp, well-defined edges",
+      "sharp boundaries between elements",
+      "high-acutance transitions and outlines",
+      "clean contours with little blur",
+      "razor-edged details throughout",
+      "hard-edged geometry in the texture",
+      "pin-sharp separations of shapes"
+    ],
+    "negative": [
+      "a texture with soft, blurred edges",
+      "gentle boundaries without crispness",
+      "low-acutance transitions",
+      "smoothed outlines and softened detail",
+      "feathered edges everywhere",
+      "hazy contours lacking definition",
+      "a low-sharpness surface"
+    ]
+  },
+  "uniformity": {
+    "positive": [
+      "a highly uniform texture without variation",
+      "consistent appearance across the surface",
+      "homogeneous structure in every region",
+      "steady, even characteristics throughout",
+      "a seamless, uniform look",
+      "no noticeable changes over the area",
+      "constant texture without anomalies"
+    ],
+    "negative": [
+      "a non-uniform, varied texture",
+      "noticeable changes from place to place",
+      "heterogeneous structure with inconsistencies",
+      "patchy regions breaking uniformity",
+      "uneven characteristics across the image",
+      "visible irregularities in the surface",
+      "a texture with nonuniform traits"
+    ]
+  },
+  "colorfulness": {
+    "positive": [
+      "a highly colorful texture bursting with hues",
+      "rich multi-hued surface with many colors",
+      "vivid palette spanning the spectrum",
+      "color-dense, lively appearance",
+      "rainbow-like variety across the texture",
+      "saturated multicolor patterning",
+      "a bright, polychromatic look"
+    ],
+    "negative": [
+      "a low-color, drab texture",
+      "muted tones with few distinct hues",
+      "limited palette with little variation",
+      "near-monochrome appearance",
+      "dull, desaturated color scheme",
+      "color-poor, restrained look",
+      "a mostly grayscale surface"
+    ]
+  },
+  "hue_red": {
+    "positive": [
+      "a texture dominated by deep reds",
+      "crimson and scarlet tones across the surface",
+      "rich ruby hues saturating the image",
+      "warm red pigments in abundance",
+      "a bold, red-leaning appearance",
+      "vermillion and carmine accents",
+      "a strongly red-tinted texture"
+    ],
+    "negative": [
+      "a texture lacking red hues",
+      "no crimson or scarlet present",
+      "colors shift away from red",
+      "cool or neutral tones dominate",
+      "absence of ruby or vermillion",
+      "no warm red pigments visible",
+      "a non-red-leaning palette"
+    ]
+  },
+  "hue_orange": {
+    "positive": [
+      "a texture dominated by orange hues",
+      "tangerine and amber tones throughout",
+      "warm orange pigments saturating the view",
+      "burnt orange and apricot accents",
+      "a citrusy, orange-leaning palette",
+      "bold saffron and carrot notes",
+      "a strong orange tint overall"
+    ],
+    "negative": [
+      "a texture with almost no orange",
+      "no amber or tangerine visible",
+      "cool or neutral hues instead of orange",
+      "palette shifted away from orange",
+      "absence of saffron-like tones",
+      "no carrot or apricot accents",
+      "a non-orange-leaning image"
+    ]
+  },
+  "hue_yellow": {
+    "positive": [
+      "a texture rich in yellow hues",
+      "lemon and golden tones dominate",
+      "warm yellow pigments everywhere",
+      "buttery and canary accents",
+      "a sunflower-yellow leaning palette",
+      "strong goldenrod presence",
+      "a distinctly yellow tint"
+    ],
+    "negative": [
+      "a texture with minimal yellow",
+      "no lemon or golden hues present",
+      "palette shifts away from yellow",
+      "cool tones replacing yellow warmth",
+      "absence of buttery yellows",
+      "no sunflower or canary tint",
+      "a non-yellow-leaning surface"
+    ]
+  },
+  "hue_chartreuse": {
+    "positive": [
+      "a texture centered on chartreuse hues",
+      "yellow-green tones dominating the surface",
+      "bright chartreuse coloration",
+      "neon yellow-green accents throughout",
+      "lively chartreuse pigment",
+      "acid-green, citrus-leaning palette",
+      "a strong chartreuse tint"
+    ],
+    "negative": [
+      "a texture with no chartreuse tones",
+      "absent yellow-green coloration",
+      "palette avoids chartreuse region",
+      "cool blue or warm yellow instead",
+      "no acid-green presence",
+      "no neon yellow-green accents",
+      "a non-chartreuse-leaning look"
+    ]
+  },
+  "hue_green": {
+    "positive": [
+      "a texture dominated by green hues",
+      "emerald and mossy greens throughout",
+      "leafy green pigments saturating the surface",
+      "verdant tones in abundance",
+      "a forest-green leaning palette",
+      "olive and jade accents",
+      "a strongly green-tinted image"
+    ],
+    "negative": [
+      "a texture lacking green hues",
+      "no emerald or moss colors present",
+      "palette shifted away from green",
+      "warmer or cooler tones instead of green",
+      "absence of verdant pigments",
+      "no olive or jade accents",
+      "a non-green-leaning texture"
+    ]
+  },
+  "hue_cyan": {
+    "positive": [
+      "a texture dominated by cyan hues",
+      "aqua and turquoise tones across the surface",
+      "cool cyan pigments saturating the image",
+      "fresh waterlike cyan accents",
+      "an ocean-cyan leaning palette",
+      "glacial blue-green coloration",
+      "a strong cyan tint overall"
+    ],
+    "negative": [
+      "a texture with minimal cyan",
+      "no aqua or turquoise tones",
+      "palette shifted away from cyan",
+      "warmer hues replacing cyan",
+      "absence of blue-green pigments",
+      "no ocean-cyan presence",
+      "a non-cyan-leaning surface"
+    ]
+  },
+  "hue_teal": {
+    "positive": [
+      "a texture emphasizing teal hues",
+      "blue-green teal tones throughout",
+      "deep teal pigments across the surface",
+      "cool teal coloration in abundance",
+      "inky teal and petrol accents",
+      "a teal-forward, moody palette",
+      "a strongly teal-tinted image"
+    ],
+    "negative": [
+      "a texture lacking teal tones",
+      "no blue-green teal visible",
+      "palette avoids teal region",
+      "warmer or purer blues instead",
+      "absence of petrol-like hues",
+      "no deep teal accents",
+      "a non-teal-leaning look"
+    ]
+  },
+  "hue_azure": {
+    "positive": [
+      "a texture rich in azure hues",
+      "clear-sky blue dominating the surface",
+      "bright azure coloration throughout",
+      "cerulean accents across the texture",
+      "fresh, airy azure palette",
+      "vivid sky-blue pigments",
+      "a distinctly azure-tinted image"
+    ],
+    "negative": [
+      "a texture without azure tones",
+      "no sky-blue coloration present",
+      "palette shifted away from azure",
+      "deeper blues or other hues instead",
+      "no cerulean accents visible",
+      "lack of bright azure pigments",
+      "a non-azure-leaning surface"
+    ]
+  },
+  "hue_blue": {
+    "positive": [
+      "a texture dominated by blue hues",
+      "cobalt and ultramarine across the surface",
+      "deep oceanic blues saturating the image",
+      "cool blue pigments in strength",
+      "a navy and royal-blue leaning palette",
+      "inky blues throughout",
+      "a strongly blue-tinted texture"
+    ],
+    "negative": [
+      "a texture with little blue",
+      "no cobalt or ultramarine present",
+      "palette shifted away from blue",
+      "warmer colors replacing blue tones",
+      "absence of deep blue pigments",
+      "no navy or royal accents",
+      "a non-blue-leaning appearance"
+    ]
+  },
+  "hue_violet": {
+    "positive": [
+      "a texture concentrated in violet hues",
+      "purple and violet tones dominate",
+      "amethyst and lavender coloration",
+      "cool purples saturating the image",
+      "violet pigments in abundance",
+      "a regal purple-leaning palette",
+      "a distinctly violet-tinted surface"
+    ],
+    "negative": [
+      "a texture lacking violet hues",
+      "no purple tones present",
+      "palette avoids violet region",
+      "reds or blues but not violet",
+      "no amethyst or lavender accents",
+      "absence of cool purples",
+      "a non-violet-leaning image"
+    ]
+  },
+  "hue_magenta": {
+    "positive": [
+      "a texture dominated by magenta hues",
+      "hot pink and fuchsia saturation",
+      "electric magenta pigments",
+      "vivid pinkish-purple coloration",
+      "neon magenta tones",
+      "bold fuchsia across the surface",
+      "a strongly magenta-tinted image"
+    ],
+    "negative": [
+      "a texture with minimal magenta",
+      "no fuchsia or hot pink visible",
+      "palette shifted away from magenta",
+      "cooler blues or warmer reds instead",
+      "no neon magenta tones present",
+      "absence of pinkish-purple hues",
+      "a non-magenta-leaning surface"
+    ]
+  },
+  "hue_rose": {
+    "positive": [
+      "a texture with prominent rose hues",
+      "rosy pink coloration throughout",
+      "soft rose and blush tones",
+      "petal-pink pigments across the image",
+      "romantic rose-tinted palette",
+      "warm pinkish highlights",
+      "a distinctly rose-leaning surface"
+    ],
+    "negative": [
+      "a texture lacking rose hues",
+      "no rosy pink coloration present",
+      "palette avoids rose region",
+      "cool neutrals instead of pink",
+      "absence of blush or petal tones",
+      "no warm pink highlights",
+      "a non-rose-leaning texture"
+    ]
+  },
+  "chalky": {
+    "positive": [
+      "a chalky, matte texture with powder residue",
+      "soft pastel-like dust on the surface",
+      "chalk dust that dulls reflections",
+      "dry, chalk-coated appearance",
+      "smearable chalk on a porous base",
+      "a pale, chalk-laden finish",
+      "powdery chalkiness everywhere"
+    ],
+    "negative": [
+      "a non-chalky, sealed surface",
+      "no powder or residue present",
+      "sheeny surface without chalk dust",
+      "clean reflections unsmeared",
+      "smooth finish free of chalk",
+      "no pastel residue visible",
+      "a non-powdered appearance"
+    ]
+  }
+}

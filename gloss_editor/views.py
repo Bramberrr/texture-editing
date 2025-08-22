@@ -4,7 +4,7 @@ import json
 import random
 from django.shortcuts import render
 from django.http import JsonResponse
-from .inference import run_inference, run_inference_roughness
+from .inference import run_inference, run_inference_roughness, run_inference_any
 
 # Dataset selection view
 def select_dataset(request):
@@ -22,14 +22,14 @@ def home(request, domain):
             if os.path.isfile(f_path):
                 os.remove(f_path)
     if domain == 'nuur':
-        pt_dir = 'real_latent'
-        preview_dir = 'static/previews'
+        pt_dir = 'real_latent_9475'
+        preview_dir = 'static/previews/nuur_9475'
     elif domain.startswith('skins_'):
-        pt_dir = os.path.join('real_latent', domain.replace('skins_', '') + '_skin')
-        preview_dir = os.path.join('static/previews', domain.replace('skins_', '') + '_skin')
+        pt_dir = os.path.join('real_latent_9475', domain.replace('skins_', '') + '_skin')
+        preview_dir = os.path.join('static/previews/nuur_9475', domain.replace('skins_', '') + '_skin')
     elif domain == 'generated':
-        pt_dir = 'real_latent/generated'
-        preview_dir = 'static/previews/generated'
+        pt_dir = 'real_latent_9475/generated'
+        preview_dir = 'static/previews/generated_9475'
     else:
         raise ValueError(f"Invalid domain: {domain}")
 
@@ -43,26 +43,26 @@ def home(request, domain):
 
 def edit_texture(request, domain, index):
     if domain == 'nuur':
-        pt_dir = 'real_latent'
+        pt_dir = 'real_latent_9475'
     elif domain.startswith('skins_'):
-        pt_dir = os.path.join('real_latent', domain.replace('skins_', '') + '_skin')
+        pt_dir = os.path.join('real_latent_9475', domain.replace('skins_', '') + '_skin')
     elif domain == 'generated':
-        pt_dir = 'real_latent/generated'
+        pt_dir = 'real_latent_9475/generated'
     else:
         raise ValueError(f"Invalid domain: {domain}")
     pt_files = sorted([f for f in os.listdir(pt_dir) if f.endswith('.pt')])
     filename = pt_files[int(index)]
 
-    _, sim_glossy, sim_matte,_,_,_ = run_inference(filename, method="none", strength=0, pt_dir=pt_dir)
-    _, sim_rough, sim_smooth,_,_,_ = run_inference_roughness(filename, method="none", strength=0, pt_dir=pt_dir)
+    _, sim_glossy, sim_matte,_,_,_,_ = run_inference(filename, method="none", strength=0, pt_dir=pt_dir)
+    _, sim_rough, sim_smooth,_,_,_,_ = run_inference_roughness(filename, method="none", strength=0, pt_dir=pt_dir)
     # In edit_texture() in views.py
     tone = domain.replace('skins_', '') if domain.startswith('skins_') else None
     if domain == 'nuur':
-        preview_path = f"previews"
+        preview_path = f"previews/nuur_9475"
     elif domain.startswith('skins_'):
-        preview_path = f"previews/{tone}_skin"
+        preview_path = f"previews/nuur_9475/{tone}_skin"
     elif domain == 'generated':
-        preview_path = 'previews/generated'
+        preview_path = 'previews/generated_9475'
     return render(request, "edit.html", {
         "index": index,
         "filename": filename,
@@ -85,24 +85,25 @@ def update_image(request):
     domain = request.GET.get("domain")
 
     if domain == 'nuur':
-        pt_dir = 'real_latent'
+        pt_dir = 'real_latent_9475'
     elif domain.startswith('skins_'):
-        pt_dir = os.path.join('real_latent', domain.replace('skins_', '') + '_skin')
+        pt_dir = os.path.join('real_latent_9475', domain.replace('skins_', '') + '_skin')
     elif domain == 'generated':
-        pt_dir = 'real_latent/generated'
+        pt_dir = 'real_latent_9475/generated'
     else:
         raise ValueError(f"Invalid domain: {domain}")
     pt_files = sorted([f for f in os.listdir(pt_dir) if f.endswith('.pt')])
     filename = pt_files[index]
 
-    img_url, sim_glossy, sim_matte, sim_img, stsim, sw = run_inference(filename, method, strength, pt_dir)
+    img_url, sim_glossy, sim_matte, sim_img, stsim, sw, nat = run_inference(filename, method, strength, pt_dir)
     return JsonResponse({
         "img_url": img_url,
         "sim_glossy": round(sim_glossy, 3),
         "sim_matte": round(sim_matte, 3),
         "sim_img": round(sim_img, 3),
         "stsim": round(stsim, 3),
-        "sw": round(sw, 3)
+        "sw": round(sw, 3),
+        "nat": nat
     })
 
 def update_image_rough(request):
@@ -112,26 +113,63 @@ def update_image_rough(request):
     domain = request.GET.get("domain")
 
     if domain == 'nuur':
-        pt_dir = 'real_latent'
+        pt_dir = 'real_latent_9475'
     elif domain.startswith('skins_'):
-        pt_dir = os.path.join('real_latent', domain.replace('skins_', '') + '_skin')
+        pt_dir = os.path.join('real_latent_9475', domain.replace('skins_', '') + '_skin')
     elif domain == 'generated':
-        pt_dir = 'real_latent/generated'
+        pt_dir = 'real_latent_9475/generated'
     else:
         raise ValueError(f"Invalid domain: {domain}")
     pt_files = sorted([f for f in os.listdir(pt_dir) if f.endswith('.pt')])
     filename = pt_files[index]
 
-    img_url, sim_rough, sim_smooth, sim_img, stsim, sw = run_inference_roughness(filename, method, strength, pt_dir)
+    img_url, sim_rough, sim_smooth, sim_img, stsim, sw, nat = run_inference_roughness(filename, method, strength, pt_dir)
     return JsonResponse({
         "img_url": img_url,
         "sim_rough": round(sim_rough, 3),
         "sim_smooth": round(sim_smooth, 3),
         "sim_img": round(sim_img, 3),
         "stsim": round(stsim, 3),
-        "sw": round(sw, 3)
+        "sw": round(sw, 3),
+        "nat": nat
     })
+def update_image_clip_any(request):
+    index = int(request.GET.get("index"))
+    method = request.GET.get("method")
+    strength = float(request.GET.get("strength"))
+    domain = request.GET.get("domain")
+    attr = request.GET.get("attr")
 
+    if domain == 'nuur':
+        pt_dir = 'real_latent_9475'
+    elif domain.startswith('skins_'):
+        pt_dir = os.path.join('real_latent_9475', domain.replace('skins_', '') + '_skin')
+    elif domain == 'generated':
+        pt_dir = 'real_latent_9475/generated'
+    else:
+        raise ValueError(f"Invalid domain: {domain}")
+
+    pt_files = sorted([f for f in os.listdir(pt_dir) if f.endswith('.pt')])
+    filename = pt_files[index]
+
+    results = run_inference_any(
+        filename=filename,
+        attr=attr,
+        strength=strength,
+        pt_dir=pt_dir
+    )
+
+    return JsonResponse({
+        "img_url": f"/{results['img_path']}",
+        "sim_glossy": results["sim_glossy"],
+        "sim_matte": results["sim_matte"],
+        "sim_rough": results["sim_rough"],
+        "sim_smooth": results["sim_smooth"],
+        "sim_img": results["sim_img"],
+        "stsim": results["stsim"],
+        "sw": results["sw"],
+        "nat": results["nat"]
+    })
 import os
 import csv
 from django.http import JsonResponse

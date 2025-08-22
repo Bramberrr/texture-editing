@@ -16,7 +16,8 @@ import torch.nn.functional as F
 from torchvision import models
 OPENAI_DATASET_MEAN = [0.48145466, 0.4578275, 0.40821073]
 OPENAI_DATASET_STD = [0.26862954, 0.26130258, 0.27577711]
-GENERATOR_CKPT = 'stylegan3-generator.pt'
+GENERATOR_CKPT = 'G_ema_weights.pt'
+# GENERATOR_CKPT = "stylegan3-bs-augment.pt"
 SCALING_FACTOR = 1  # or 4, depending on how dense you want generated activations
 CFG = 'stylegan3-r'
 RES = 256
@@ -28,6 +29,10 @@ G_kwargs = get_generator_kwargs(device=device)
 generator = dnnlib.util.construct_class_by_name(**G_kwargs)
 generator.load_state_dict(torch.load(GENERATOR_CKPT, map_location='cpu'), strict=False)
 generator.eval().to(device)
+z = torch.randn([1, generator.z_dim]).cuda()
+c = None
+img = generator(z, c, noise_mode='const')
+print("Warm-up complete.")
 
 clip_model, _, _ = open_clip.create_model_and_transforms(
             'ViT-B-32', pretrained='laion2b_s34b_b79k'
@@ -238,27 +243,71 @@ def render_preview(filename, save_path):
 
 def remap_strengths(signed_scalar):
     return np.exp(signed_scalar) if signed_scalar < 0 else signed_scalar
-def power_normalize(tensor, gamma=0.5):
-    return torch.sign(tensor) * (tensor.abs() ** gamma)
-def CLIP_editing_gloss(generator, latent_s, weights_deltas, alpha, device):
-    # s_dir = torch.load("dir_glossy_matte_clip.pt").to(device) * 0.5
+
+from torchvision.models import convnext_tiny, ConvNeXt_Tiny_Weights
+
+import torch.serialization as ts
+
+# allow-list the specific numpy scalar class used in your checkpoint
+ts.add_safe_globals([np.core.multiarray.scalar])
+
+ckpt = torch.load(
+    "D:/projects/SafeTrainer/exp_natural_clf/best.pt",
+    map_location="cpu",
+    weights_only=False,  # WARNING: can execute arbitrary code while unpickling
+)
+# Rebuild the model structure
+model = convnext_tiny(weights=ConvNeXt_Tiny_Weights.IMAGENET1K_V1)
+in_features = model.classifier[2].in_features
+model.classifier[2] = torch.nn.Linear(in_features, len(ckpt["classes"]))
+model.load_state_dict(ckpt["model"])
+model.eval().to("cuda")
+IMAGENET_MEAN = torch.tensor([0.485, 0.456, 0.406]).view(1,3,1,1).to("cuda")
+IMAGENET_STD  = torch.tensor([0.229, 0.224, 0.225]).view(1,3,1,1).to("cuda")
+
+def preprocess_batch(x):
+    # x: [B,C,H,W] in [-1,1] or [0,1]
+    if x.min() < 0:  # assume [-1,1]
+        x = (x + 1) / 2.0
+    return (x - IMAGENET_MEAN) / IMAGENET_STD
+
+@torch.no_grad()
+def is_natural(x, threshold=0.5):
+    """
+    x: [B,3,H,W] tensor
+    returns: list[bool] for each image
+    """
+    x = preprocess_batch(x).to("cuda")
+    logits = model(x)                # [B,2]
+    probs = F.softmax(logits, dim=-1)
+    # assume class order = ["natural", "unnatural"]
+    p_natural = probs[:, ckpt["classes"].index("natural")]
+    return (p_natural >= threshold).cpu().tolist()
+
+s_new = torch.load("deltas_layers9_15.pt")
+s_new_12 = torch.load("delta_layers12_15.pt")
+
+def CLIP_editing_any(generator, attr, latent_s, weights_deltas, alpha, device):
     s_dir = torch.zeros_like(latent_s).to(device)
-    s_dir[0,12308] = 1  # highlights
-    # s_dir[0,12156] = 1  # contrast
-    # s_dir[0,12172] = 1 # contrast + highlights
-    # s_dir[0,12277] = 0.5  # brightness roughness
-    # s_dir[0,12139] = 1   # showdows
-    # s_dir[0,12175] = -1  # contrast
-    # s_dir = power_normalize(s_dir,gamma=2)
+    s_dir[0,-1386:] = s_new_12[attr].to(device) * 20
     img_clip = generator.synthesis(ss=latent_s + s_dir * alpha, weights_deltas=weights_deltas, noise_mode='const').clamp(-1, 1)
     return (img_clip + 1) / 2
 
-def CLIP_editing_rough(generator, latent_s, weights_deltas, alpha, device):
-    # s_dir = torch.load("dir_rough_smooth.pt").to(device) * 5
+def CLIP_editing_gloss(generator, latent_s, weights_deltas, alpha, device):
     s_dir = torch.zeros_like(latent_s).to(device)
-    s_dir[0,12155] = 1  # 
+    s_dir[0,-1386:] = s_new_12["glossy"].to(device) * 20
+
+    img_clip = generator.synthesis(ss=latent_s + s_dir * alpha, weights_deltas=weights_deltas, noise_mode='const').clamp(-1, 1)
+    img_clip = (img_clip + 1) / 2
+    return img_clip
+
+
+def CLIP_editing_rough(generator, latent_s, weights_deltas, alpha, device):
+    s_dir = torch.zeros_like(latent_s).to(device)
+    s_dir[0,-1386:] = s_new_12["rough"].to(device) * 20
     img_clip = generator.synthesis(ss=latent_s + s_dir * alpha, weights_deltas=weights_deltas, noise_mode='const').clamp(-1, 1)
     return (img_clip + 1) / 2
+
 
 def get_clip_similarity(img_tensor, feat, clip_model, device):
     if img_tensor.ndim == 3:
@@ -325,12 +374,13 @@ def run_inference(filename, method, strength, pt_dir="real_latent"):
     feat_neg = encode_prompts(prompts["matte"], tokenizer, clip_model, device)
     sim_glossy = get_clip_similarity(edited, feat_pos, clip_model, device).item()
     sim_matte = get_clip_similarity(edited, feat_neg, clip_model, device).item()
+    nat = is_natural(edited.unsqueeze(0))[0]
 
     sim_img = get_clip_similarity(edited, img_feat, clip_model, device).item()
     stsim = stsim_loss(img.unsqueeze(0).double(), edited.unsqueeze(0).double()).item()
     sw = slicing_loss(vgg(img.unsqueeze(0)),vgg(edited.unsqueeze(0))).item()
 
-    return f"/{save_path}", sim_glossy, sim_matte, sim_img,stsim,sw
+    return f"/{save_path}", sim_glossy, sim_matte, sim_img,stsim,sw, nat
 
 
 def run_inference_roughness(filename, method, strength, pt_dir="real_latent"):
@@ -369,9 +419,64 @@ def run_inference_roughness(filename, method, strength, pt_dir="real_latent"):
     feat_neg = encode_prompts(prompts["smooth"], tokenizer, clip_model, device)
     sim_rough = get_clip_similarity(edited, feat_pos, clip_model, device).item()
     sim_smooth = get_clip_similarity(edited, feat_neg, clip_model, device).item()
+    nat = is_natural(edited.unsqueeze(0))[0]
     sim_img = get_clip_similarity(edited, img_feat, clip_model, device).item()
     stsim = stsim_loss(img.unsqueeze(0).double(), edited.unsqueeze(0).double()).item()
     sw = slicing_loss(vgg(img.unsqueeze(0)),vgg(edited.unsqueeze(0))).item()
 
-    return f"/{save_path}", sim_rough, sim_smooth, sim_img,stsim,sw
+    return f"/{save_path}", sim_rough, sim_smooth, sim_img,stsim, sw, nat
 
+def run_inference_any(filename, attr, strength, pt_dir):
+
+    pt_path = os.path.join(pt_dir, filename)
+    data = torch.load(pt_path, map_location=device)
+
+    # Detect format
+    if isinstance(data, dict) and "s_code" in data:
+        s_code = generator.synthesis.get_s_codes(data['s_code'].to(device)).to(device)
+        weights_deltas = [w.to(device) if w is not None else None for w in data['delta_weights']]
+    else:
+        s_code = data.to(device)
+        weights_deltas = None
+
+    base_img = generator.synthesis(ss=s_code, weights_deltas=weights_deltas, noise_mode='const')
+    img = (base_img.clamp(-1, 1) + 1) / 2
+    img = img.squeeze(0)
+    img_feat = get_clip_feat(img, clip_model, device)
+
+    edited = CLIP_editing_any(generator, attr, s_code, weights_deltas, alpha=strength, device=device)
+    nat = is_natural(edited)[0]
+    edited = edited.squeeze(0)
+
+    # Save path
+    save_path = f"static/tmp/{filename}_clip_any_{attr}_{strength}.png"
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    save_image(edited, save_path)
+
+    with open("prompts.json", "r") as f:
+        prompts = json.load(f)
+
+    feat_gloss = encode_prompts(prompts["glossy"], tokenizer, clip_model, device)
+    feat_matte = encode_prompts(prompts["matte"], tokenizer, clip_model, device)
+    feat_rough = encode_prompts(prompts["rough"], tokenizer, clip_model, device)
+    feat_smooth = encode_prompts(prompts["smooth"], tokenizer, clip_model, device)
+
+    sim_glossy = get_clip_similarity(edited, feat_gloss, clip_model, device).item()
+    sim_matte = get_clip_similarity(edited, feat_matte, clip_model, device).item()
+    sim_rough = get_clip_similarity(edited, feat_rough, clip_model, device).item()
+    sim_smooth = get_clip_similarity(edited, feat_smooth, clip_model, device).item()
+    sim_img = get_clip_similarity(edited, img_feat, clip_model, device).item()
+    stsim = stsim_loss(img.unsqueeze(0).double(), edited.unsqueeze(0).double()).item()
+    sw = slicing_loss(vgg(img.unsqueeze(0)), vgg(edited.unsqueeze(0))).item()
+
+    return {
+        "img_path": save_path,
+        "sim_glossy": round(sim_glossy, 3),
+        "sim_matte": round(sim_matte, 3),
+        "sim_rough": round(sim_rough, 3),
+        "sim_smooth": round(sim_smooth, 3),
+        "sim_img": round(sim_img, 3),
+        "stsim": round(stsim, 3),
+        "sw": round(sw, 3),
+        "nat": nat
+    }

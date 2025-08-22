@@ -53,7 +53,6 @@ class AttributeTrainer:
             ('large scale', 'small scale'),
             ('grayscale', 'saturated color')
         ]
-        G_kwargs = get_generator_kwargs(device=self.device)
         self.generator = self.load_generator(args.generator_ckpt)
         self.clip_model, _, _ = open_clip.create_model_and_transforms(
             args.clip_model, pretrained=args.clip_pretrained

@@ -603,4 +603,3 @@ class Generator(torch.nn.Module):
         img = self.synthesis(ws, update_emas=update_emas, **synthesis_kwargs)
         return img
 
-#----------------------------------------------------------------------------

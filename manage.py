@@ -4,6 +4,7 @@ import os
 import sys
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+# os.environ["TORCH_CUDA_ARCH_LIST"] = "8.9"
 
 def main():
     """Run administrative tasks."""

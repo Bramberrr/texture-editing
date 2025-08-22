@@ -8,7 +8,7 @@ from model.trainer import get_generator_kwargs
 import dnnlib
 import torch
 
-GENERATOR_CKPT = 'stylegan3-generator.pt'
+GENERATOR_CKPT = 'G_ema_weights.pt'
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Load generator
@@ -17,8 +17,8 @@ generator = dnnlib.util.construct_class_by_name(**G_kwargs)
 generator.load_state_dict(torch.load(GENERATOR_CKPT, map_location='cpu'), strict=False)
 generator.eval().to(device)
 
-pt_root = "real_latent"
-output_root = "static/previews"
+pt_root = "real_latent_9475"
+output_root = "static/previews/nuur_9475"
 os.makedirs(output_root, exist_ok=True)
 
 # Helper: render preview image

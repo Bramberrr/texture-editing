@@ -13,10 +13,16 @@
       font-size: 14px;
       margin-top: 4px;
     }
+    input[type="range"] {
+  accent-color: var(--slider-color, blue); /* fallback is blue */
+}
   </style>
   <script>
     function updateGloss(method) {
-    const s = document.getElementById(method + "_slider").value;
+    const sliderId = method + "_slider";
+    const slider = document.getElementById(sliderId);
+    const s = slider.value;
+
     fetch(`/api/update_image/?index={{ index }}&method=${method}&strength=${s}&domain={{ domain }}`)
       .then(r => r.json()).then(data => {
         document.getElementById(method + "_img").src = data.img_url;
@@ -26,12 +32,18 @@
         document.getElementById(method + "_simimg").innerText = data.sim_img;
         document.getElementById(method + "_stsim").innerText = data.stsim;
         document.getElementById(method + "_sw").innerText = data.sw;
+        document.getElementById(method + "_nat").innerText = data.nat;
+        // ✅ update color AFTER setting `nat`
+        const isNatural = data.nat === true || data.nat === "true";
+        slider.style.setProperty('--slider-color', isNatural ? 'blue' : 'red');
       });
   }
 
 
     function updateRough(method) {
-    const s = document.getElementById("rough_" + method + "_slider").value;
+    const sliderId = "rough_" + method + "_slider";
+    const slider = document.getElementById(sliderId);
+    const s = slider.value;
     fetch(`/api/update_image_rough/?index={{ index }}&method=${method}&strength=${s}&domain={{ domain }}`)
       .then(r => r.json()).then(data => {
         document.getElementById("rough_" + method + "_img").src = data.img_url;
@@ -41,8 +53,35 @@
         document.getElementById("rough_" + method + "_simimg").innerText = data.sim_img;
         document.getElementById("rough_" + method + "_stsim").innerText = data.stsim;
         document.getElementById("rough_" + method + "_sw").innerText = data.sw;
+        document.getElementById("rough_" + method + "_nat").innerText = data.nat;
+        const isNatural = data.nat === true || data.nat === "true";
+        slider.style.setProperty('--slider-color', isNatural ? 'blue' : 'red');
       });
   }
+
+  function updateClipAny() {
+  const sliderId = "rough_clip_any_slider";
+  const slider = document.getElementById(sliderId);
+  const s = slider.value;
+  const attr = document.getElementById("clip_any_attr").value;
+  document.getElementById("rough_clip_any_val").innerText = s;
+
+  fetch(`/api/update_image_clip_any/?index={{ index }}&method=clip_any&strength=${s}&domain={{ domain }}&attr=${attr}`)
+    .then(r => r.json()).then(data => {
+      document.getElementById("rough_clip_any_img").src = data.img_url;
+      document.getElementById("rough_clip_any_gloss").innerText = data.sim_glossy;
+      document.getElementById("rough_clip_any_matte").innerText = data.sim_matte;
+      document.getElementById("rough_clip_any_rough").innerText = data.sim_rough;
+      document.getElementById("rough_clip_any_smooth").innerText = data.sim_smooth;
+      document.getElementById("rough_clip_any_simimg").innerText = data.sim_img;
+      document.getElementById("rough_clip_any_stsim").innerText = data.stsim;
+      document.getElementById("rough_clip_any_sw").innerText = data.sw;
+      document.getElementById("rough_clip_any_nat").innerText = data.nat;
+      const isNatural = data.nat === true || data.nat === "true";
+      slider.style.setProperty('--slider-color', isNatural ? 'blue' : 'red');
+    });
+}
+
   </script>
 </head>
 <body>
@@ -78,6 +117,7 @@
       <div>Sim Img: <span id="{{ method }}_simimg">--</span></div>
       <div>STSIM: <span id="{{ method }}_stsim">--</span></div>
       <div>SW: <span id="{{ method }}_sw">--</span></div>
+      <div>isNatural: <span id="{{ method }}_nat">--</span></div>
     </div>
     {% endfor %}
   </div>
@@ -92,16 +132,55 @@
       <h3>{{ method|title }}</h3>
       <img id="rough_{{ method }}_img" width="256" height="256" src="/static/{{ preview_path }}/{{ filename }}.png">
       <br>
-      <input type="range" id="rough_{{ method }}_slider" min="-10" max="10" step="0.1" value="0"
+      <input type="range" class="slider" id="rough_{{ method }}_slider" min="-10" max="10" step="0.1" value="0"
              oninput="updateRough('{{ method }}')">
       <div class="slider-value">Value: <span id="rough_{{ method }}_val">0</span></div>
       <div>Rough: <span id="rough_{{ method }}_rough">--</span></div>
       <div>Smooth: <span id="rough_{{ method }}_smooth">--</span></div>
       <div>Sim Img: <span id="rough_{{ method }}_simimg">--</span></div>
-            <div>STSIM: <span id="rough_{{ method }}_stsim">--</span></div>
+      <div>STSIM: <span id="rough_{{ method }}_stsim">--</span></div>
       <div>SW: <span id="rough_{{ method }}_sw">--</span></div>
+      <div>isNatural: <span id="rough_{{ method }}_nat">--</span></div>
     </div>
     {% endfor %}
+    <!-- Roughness Editing - CLIP Any -->
+    <div class="method-block">
+      <h3>CLIP Any</h3>
+      <img id="rough_clip_any_img" class="slider" width="256" height="256" src="/static/{{ preview_path }}/{{ filename }}.png"><br>
+
+      <!-- Attribute Dropdown -->
+      <label for="clip_any_attr">Attribute:</label>
+      <select id="clip_any_attr" onchange="updateClipAny()">
+        <option value="rough">Rough</option>
+        <option value="glossy">Glossy</option>
+        <option value="highlighted">Highlighted</option>
+        <option value="saturation">Saturation</option>
+        <option value="sharp">Sharp</option>
+        <option value="fine_scale">Fine</option>
+        <option value="uniformity">Uniformity</option>
+        <option value="wet">Wet</option>
+        <option value="warm_toned">Warm toned</option>
+        <option value="brightness">Bright</option>
+        <option value="regular">Regular</option>
+        <option value="metallic">Metallic</option>
+        <option value="translucent">Translucent</option>
+        <!-- Add more attributes if needed -->
+      </select><br>
+
+      <!-- Strength Slider -->
+      <input type="range" id="rough_clip_any_slider" min="-10" max="10" step="1" value="0" oninput="updateClipAny()">
+      <div class="slider-value">Value: <span id="rough_clip_any_val">0</span></div>
+
+      <div>Glossy: <span id="rough_clip_any_gloss">--</span></div>
+      <div>Matte: <span id="rough_clip_any_matte">--</span></div>
+      <div>Rough: <span id="rough_clip_any_rough">--</span></div>
+      <div>Smooth: <span id="rough_clip_any_smooth">--</span></div>
+      <div>Sim Img: <span id="rough_clip_any_simimg">--</span></div>
+      <div>STSIM: <span id="rough_clip_any_stsim">--</span></div>
+      <div>SW: <span id="rough_clip_any_sw">--</span></div>
+      <div>isNatural: <span id="rough_clip_any_nat">--</span></div>
+    </div>
+
   </div>
   <h3>Answer the following questions:</h3>
 
