@@ -15,7 +15,17 @@
     }
     input[type="range"] {
   accent-color: var(--slider-color, blue); /* fallback is blue */
+    }
+    .color-box {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-left: 0.3em;
+  border: 1px solid #aaa;
+  vertical-align: middle;
+  border-radius: 2px;
 }
+
   </style>
   <script>
     function updateGloss(method) {
@@ -109,7 +119,7 @@
       <h3>{{ method|title }}</h3>
       <img id="{{ method }}_img" width="256" height="256" src="/static/{{ preview_path }}/{{ filename }}.png">
       <br>
-      <input type="range" id="{{ method }}_slider" min="-10" max="10" step="0.1" value="0"
+      <input type="range" id="{{ method }}_slider" min="-10" max="10" step="1 value="0"
              oninput="updateGloss('{{ method }}')">
       <div class="slider-value">Value: <span id="{{ method }}_val">0</span></div>
       <div>Glossy: <span id="{{ method }}_gloss">--</span></div>
@@ -132,7 +142,7 @@
       <h3>{{ method|title }}</h3>
       <img id="rough_{{ method }}_img" width="256" height="256" src="/static/{{ preview_path }}/{{ filename }}.png">
       <br>
-      <input type="range" class="slider" id="rough_{{ method }}_slider" min="-10" max="10" step="0.1" value="0"
+      <input type="range" class="slider" id="rough_{{ method }}_slider" min="-10" max="10" step="1" value="0"
              oninput="updateRough('{{ method }}')">
       <div class="slider-value">Value: <span id="rough_{{ method }}_val">0</span></div>
       <div>Rough: <span id="rough_{{ method }}_rough">--</span></div>
@@ -151,8 +161,8 @@
       <!-- Attribute Dropdown -->
       <label for="clip_any_attr">Attribute:</label>
       <select id="clip_any_attr" onchange="updateClipAny()">
-        <option value="rough">Rough</option>
         <option value="glossy">Glossy</option>
+        <option value="rough">Rough</option>
         <option value="highlighted">Highlighted</option>
         <option value="saturation">Saturation</option>
         <option value="sharp">Sharp</option>
@@ -163,7 +173,25 @@
         <option value="brightness">Bright</option>
         <option value="regular">Regular</option>
         <option value="metallic">Metallic</option>
-        <option value="translucent">Translucent</option>
+        <option value="colorfulness">Colorfulness</option>
+        <option value="iridescent">Iridescent</option>
+        <option value="speckled">Speckled</option>
+        <option value="contrast">Contrast</option>
+        <option value="shadowed">Shadowed</option>
+        <option value="texture_depth">Texture_depth</option>
+        <option value="chalky">Chalky</option>
+        <!-- Hue options with emoji color patches -->
+        <option value="hue_red">hue:red 🟥</option>
+        <option value="hue_orange">hue:orange 🟧</option>
+        <option value="hue_yellow">hue:yellow 🟨</option>
+        <option value="hue_chartreuse">hue:chartreuse 🟩</option>
+        <option value="hue_green">hue:green 🟢</option>
+        <option value="hue_teal">hue:teal 🟦</option>
+        <option value="hue_azure">hue:azure 🔵</option>
+        <option value="hue_blue">hue:blue 🔷</option>
+        <option value="hue_violet">hue:violet 🟪</option>
+        <option value="hue_magenta">hue:magenta 💗</option>
+        <option value="hue_rose">hue:rose 🌸</option>
         <!-- Add more attributes if needed -->
       </select><br>
 

@@ -24,8 +24,8 @@ os.makedirs(output_root, exist_ok=True)
 # Helper: render preview image
 def render_preview(pt_path, save_path):
     data = torch.load(pt_path, map_location=device)
-    s_code = generator.synthesis.get_s_codes(data['s_code'].to(device)).to(device)
-    weights_deltas = [w.to(device) if w is not None else None for w in data['delta_weights']]
+    s_code = generator.synthesis.get_s_codes(data['ws'].to(device)).to(device)
+    weights_deltas = [w.to(device) if w is not None else None for w in data['weight_deltas']]
     img = generator.synthesis(ss=s_code, weights_deltas=weights_deltas, noise_mode='const')
     img = (img.clamp(-1, 1) + 1) / 2
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
