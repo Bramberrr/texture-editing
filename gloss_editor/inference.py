@@ -323,17 +323,13 @@ def CLIP_editing_any(generator, attr, latent_s, weights_deltas, alpha, device):
 
 def CLIP_editing_gloss(generator, latent_s, weights_deltas, alpha, device):
     s_dir = torch.zeros_like(latent_s).to(device)
-    # # s_dir[0,-1386:] = s_new["glossy"].to(device) * 20
-
-    s_dir[:,12287] = latent_s[:, 12287] * 0.3
-    s_dir[:,12019] = latent_s[:, 12019] * -0.1
-    # s_dir[:,12308] = 0.2
-    # s_dir[:,12332] = latent_s[:, 12332] * 0.2
-    # s_dir = torch.load("trained_dirs/delta_s_glossy-matte.pt").to(device)
-
+    # s_dir[0,-1386:] = s_new["glossy"].to(device) * 20
+    s_dir[:,12318] = latent_s[:, 12318] * 0.05
+    s_dir[:,12287] = latent_s[:, 12287] * 0.2
+    s_dir[:,12308] = latent_s[:, 12308] * 0.02
+    # 12022
     # img = (generator.synthesis(ss=latent_s, weights_deltas=weights_deltas, noise_mode='const').clamp(-1, 1) + 1) / 2
     # s_dir = predict_delta_s_from_image(img)
-
 
     img_clip = generator.synthesis(ss=latent_s + s_dir * alpha, weights_deltas=weights_deltas, noise_mode='const').clamp(-1, 1)
     img_clip = (img_clip + 1) / 2
@@ -346,8 +342,36 @@ def CLIP_editing_rough(generator, latent_s, weights_deltas, alpha, device):
     # s_dir = torch.load("trained_dirs/dir_rough_smooth.pt").to(device)
     # s_dir = torch.zeros_like(latent_s).to(device)
     # s_dir[:,12170] = 1.0
-    s_dir[:,12311] = latent_s[:, 12311]*0.2
-    # s_dir[:,12287] = latent_s[:, 12287] *-0.1
+    # s_dir[:,12311] = latent_s[:, 12311]*0.1
+    # s_dir[:,12318] = latent_s[:, 12318]*0.1
+    # s_dir[:,12329] = latent_s[:, 12329]*0.1
+    # s_dir[:,12239] = latent_s[:, 12239]*0.1
+    # s_dir[:,11933] = latent_s[:, 11933] * 0.1
+    # s_dir[:,12318] = latent_s[:, 12318] * 0.1
+    # s_dir[:,11712] = latent_s[:, 11712] * 0.1
+    s_dir[:,9293] = latent_s[:, 9293] * 0.1 # random
+    s_dir[:,9312] = latent_s[:, 9312] * 0.1 # random
+    s_dir[:,9417] = latent_s[:, 9417] * 0.1 # random
+    s_dir[:,9461] = latent_s[:, 9461] * 0.1 # random
+    # s_dir[:,12240] = latent_s[:, 12240] * 0.1 # random
+    s_dir[:,8888] = latent_s[:, 8888] * 0.1 # random
+    s_dir[:,9808] = latent_s[:, 9808] * 0.1 # random
+    s_dir[:,8907] = latent_s[:, 8907] * 0.1 # random
+    s_dir[:,9197] = latent_s[:, 9197] * 0.1 # random
+    s_dir[:,8392] = latent_s[:, 8392] * 0.1 # random
+    s_dir[:,9017] = latent_s[:, 9017] * 0.1 # random
+    s_dir[:,8668] = latent_s[:, 8668] * 0.1 # random
+    s_dir[:,9540] = latent_s[:, 9540] * 0.1 # random
+    s_dir[:,11144] = latent_s[:, 11144] * 0.1 # random
+    s_dir[:,12123] = latent_s[:, 12123] * 0.1 # random
+    # s_dir[:,12097] = latent_s[:, 12097] * 0.1 # random
+
+
+    # if alpha>0:
+    #     s_dir[:,12162] = latent_s[:, 12162] * -0.2
+    # else:
+    #     s_dir[:,12162] = latent_s[:, 12162] * -0.2
+
     
     # s_dir = torch.zeros_like(latent_s).to(device)
     # s_dir[0,-1386:] = s_bs["BS-gloss"].to(device) * 20
@@ -386,10 +410,10 @@ def run_inference(filename, method, strength, pt_dir="real_latent"):
     data = torch.load(pt_path, map_location=device)
 
     # Detect format
-    # if isinstance(data, dict) and "s_code" in data:
-    #     s_code = generator.synthesis.get_s_codes(data['s_code'].to(device)).to(device)
-    #     weights_deltas = [w.to(device) if w is not None else None for w in data['delta_weights']]
-    if isinstance(data, dict) and "ws" in data:
+    if isinstance(data, dict) and "s_code" in data:
+        s_code = generator.synthesis.get_s_codes(data['s_code'].to(device)).to(device)
+        weights_deltas = [w.to(device) if w is not None else None for w in data['delta_weights']]
+    elif isinstance(data, dict) and "ws" in data:
         s_code = generator.synthesis.get_s_codes(data['ws'].to(device)).to(device)
         weights_deltas = [w.to(device) if w is not None else None for w in data['weight_deltas']]
     else:
@@ -437,10 +461,10 @@ def run_inference_roughness(filename, method, strength, pt_dir="real_latent"):
     data = torch.load(pt_path, map_location=device)
 
     # Detect format
-    # if isinstance(data, dict) and "s_code" in data:
-    #     s_code = generator.synthesis.get_s_codes(data['s_code'].to(device)).to(device)
-    #     weights_deltas = [w.to(device) if w is not None else None for w in data['delta_weights']]
-    if isinstance(data, dict) and "ws" in data:
+    if isinstance(data, dict) and "s_code" in data:
+        s_code = generator.synthesis.get_s_codes(data['s_code'].to(device)).to(device)
+        weights_deltas = [w.to(device) if w is not None else None for w in data['delta_weights']]
+    elif isinstance(data, dict) and "ws" in data:
         s_code = generator.synthesis.get_s_codes(data['ws'].to(device)).to(device)
         weights_deltas = [w.to(device) if w is not None else None for w in data['weight_deltas']]
     else:
