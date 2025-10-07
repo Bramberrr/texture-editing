@@ -1,14 +1,15 @@
-<!-- edit.html -->
 <!DOCTYPE html>
 <html>
 <head>
   <title>Edit {{ filename }}</title>
   <style>
+    .row { display: flex; justify-content: center; gap: 48px; margin: 24px 0; flex-wrap: wrap; }
     .method-block {
       display: inline-block;
       margin: 0 20px;
       text-align: center;
     }
+    .img { width: 256px; height: 256px; object-fit: cover; display: block; margin: 0 auto 8px; }
     .slider-value {
       font-size: 14px;
       margin-top: 4px;
@@ -16,245 +17,217 @@
     input[type="range"] {
   accent-color: var(--slider-color, blue); /* fallback is blue */
     }
-    .color-box {
-  display: inline-block;
-  width: 1em;
-  height: 1em;
-  margin-left: 0.3em;
-  border: 1px solid #aaa;
-  vertical-align: middle;
-  border-radius: 2px;
-}
-
+    .hist { width: 256px; height: 160px; display: block; margin: 8px auto 0; border: 1px solid #ddd; }
+    .section-title { text-align: center; margin-top: 24px; }
   </style>
   <script>
+    // ---------- Helpers ----------
+    function setSliderColor(el, isNatural) {
+      el.style.setProperty('--slider-color', isNatural ? 'blue' : 'red');
+    }
+    function qs(id){ return document.getElementById(id); }
+
+    // ---------- Gloss row ----------
     function updateGloss(method) {
-    const sliderId = method + "_slider";
-    const slider = document.getElementById(sliderId);
-    const s = slider.value;
+      const slider = qs(method + "_slider");
+      const s = slider.value;
+      fetch(`/api/update_image/?index={{ index }}&method=${method}&strength=${s}&domain={{ domain }}&attr=glossy`)
+        .then(r => r.json()).then(data => {
+          qs(method + "_img").src = data.img_url;
+          qs(method + "_val").innerText = s;
+          qs(method + "_a1").innerText = data.sim_attr1; // glossy
+          qs(method + "_a2").innerText = data.sim_attr2; // matte
+          qs(method + "_simimg").innerText = data.sim_img;
+          qs(method + "_stsim").innerText = data.stsim;
+          qs(method + "_sw").innerText  = data.sw;
+          qs(method + "_nat").innerText = data.nat;
+          qs(method + "_skew").innerText = data.skew;
+          qs(method + "_hist").src = data.hist_url;
+          setSliderColor(slider, data.nat === true);
+        });
+    }
 
-    fetch(`/api/update_image/?index={{ index }}&method=${method}&strength=${s}&domain={{ domain }}`)
-      .then(r => r.json()).then(data => {
-        document.getElementById(method + "_img").src = data.img_url;
-        document.getElementById(method + "_gloss").innerText = data.sim_glossy;
-        document.getElementById(method + "_matte").innerText = data.sim_matte;
-        document.getElementById(method + "_val").innerText = s;
-        document.getElementById(method + "_simimg").innerText = data.sim_img;
-        document.getElementById(method + "_stsim").innerText = data.stsim;
-        document.getElementById(method + "_sw").innerText = data.sw;
-        document.getElementById(method + "_nat").innerText = data.nat;
-        // ✅ update color AFTER setting `nat`
-        const isNatural = data.nat === true || data.nat === "true";
-        slider.style.setProperty('--slider-color', isNatural ? 'blue' : 'red');
-      });
-  }
-
-
+    // ---------- Rough row ----------
     function updateRough(method) {
-    const sliderId = "rough_" + method + "_slider";
-    const slider = document.getElementById(sliderId);
-    const s = slider.value;
-    fetch(`/api/update_image_rough/?index={{ index }}&method=${method}&strength=${s}&domain={{ domain }}`)
-      .then(r => r.json()).then(data => {
-        document.getElementById("rough_" + method + "_img").src = data.img_url;
-        document.getElementById("rough_" + method + "_rough").innerText = data.sim_rough;
-        document.getElementById("rough_" + method + "_smooth").innerText = data.sim_smooth;
-        document.getElementById("rough_" + method + "_val").innerText = s;
-        document.getElementById("rough_" + method + "_simimg").innerText = data.sim_img;
-        document.getElementById("rough_" + method + "_stsim").innerText = data.stsim;
-        document.getElementById("rough_" + method + "_sw").innerText = data.sw;
-        document.getElementById("rough_" + method + "_nat").innerText = data.nat;
-        const isNatural = data.nat === true || data.nat === "true";
-        slider.style.setProperty('--slider-color', isNatural ? 'blue' : 'red');
-      });
-  }
+      const slider = qs("rough_" + method + "_slider");
+      const s = slider.value;
+      fetch(`/api/update_image/?index={{ index }}&method=${method}&strength=${s}&domain={{ domain }}&attr=rough`)
+        .then(r => r.json()).then(data => {
+          qs("rough_" + method + "_img").src = data.img_url;
+          qs("rough_" + method + "_val").innerText = s;
+          qs("rough_" + method + "_a1").innerText = data.sim_attr1;
+          qs("rough_" + method + "_a2").innerText = data.sim_attr2;
+          qs("rough_" + method + "_simimg").innerText = data.sim_img;
+          qs("rough_" + method + "_stsim").innerText = data.stsim;
+          qs("rough_" + method + "_sw").innerText  = data.sw;
+          qs("rough_" + method + "_nat").innerText = data.nat;
+          qs("rough_" + method + "_skew").innerText = data.skew;
+          qs("rough_" + method + "_hist").src = data.hist_url;
+          setSliderColor(slider, data.nat === true);
+        });
+    }
 
-  function updateClipAny() {
-  const sliderId = "rough_clip_any_slider";
-  const slider = document.getElementById(sliderId);
-  const s = slider.value;
-  const attr = document.getElementById("clip_any_attr").value;
-  document.getElementById("rough_clip_any_val").innerText = s;
+    // ---------- Pattern row (regular/random/coarse) ----------
+    function updatePattern(attr) {
+      const slider = qs(`pattern_${attr}_slider`);
+      const s = slider.value;
+      fetch(`/api/update_image/?index={{ index }}&method=clip&strength=${s}&domain={{ domain }}&attr=${attr}`)
+        .then(r => r.json()).then(data => {
+          qs(`pattern_${attr}_img`).src = data.img_url;
+          qs(`pattern_${attr}_val`).innerText = s;
+          qs(`pattern_${attr}_a1`).innerText = data.sim_attr1; // rough
+          qs(`pattern_${attr}_a2`).innerText = data.sim_attr2; // smooth
+          qs(`pattern_${attr}_simimg`).innerText = data.sim_img;
+          qs(`pattern_${attr}_stsim`).innerText = data.stsim;
+          qs(`pattern_${attr}_sw`).innerText  = data.sw;
+          qs(`pattern_${attr}_nat`).innerText = data.nat;
+          qs(`pattern_${attr}_skew`).innerText = data.skew;
+          qs(`pattern_${attr}_hist`).src = data.hist_url;
+          setSliderColor(slider, data.nat === true);
+        });
+    }
 
-  fetch(`/api/update_image_clip_any/?index={{ index }}&method=clip_any&strength=${s}&domain={{ domain }}&attr=${attr}`)
-    .then(r => r.json()).then(data => {
-      document.getElementById("rough_clip_any_img").src = data.img_url;
-      document.getElementById("rough_clip_any_gloss").innerText = data.sim_glossy;
-      document.getElementById("rough_clip_any_matte").innerText = data.sim_matte;
-      document.getElementById("rough_clip_any_rough").innerText = data.sim_rough;
-      document.getElementById("rough_clip_any_smooth").innerText = data.sim_smooth;
-      document.getElementById("rough_clip_any_simimg").innerText = data.sim_img;
-      document.getElementById("rough_clip_any_stsim").innerText = data.stsim;
-      document.getElementById("rough_clip_any_sw").innerText = data.sw;
-      document.getElementById("rough_clip_any_nat").innerText = data.nat;
-      const isNatural = data.nat === true || data.nat === "true";
-      slider.style.setProperty('--slider-color', isNatural ? 'blue' : 'red');
-    });
-}
-
+    function submitAnswer(attr, value) {
+      fetch(`/api/submit_answer/?index={{ index }}&domain={{ domain }}&attribute=${attr}&value=${value}`)
+        .then(r => r.json()).then(data => alert(data.message));
+    }
   </script>
 </head>
 <body>
-  <h1>Editing {{ index }} - {{ filename }}</h1>
 
-  <!-- Original Preview -->
-  <div style="text-align: center; margin-bottom: 20px;">
-    <h2>Original Image</h2>
-    <img src="/static/{{ preview_path }}/{{ filename }}.png" width="256" height="256">
-    <div style="margin-top: 10px;">
-      Glossy: <span>{{ original_scores.glossy }}</span> |
-      Matte: <span>{{ original_scores.matte }}</span> |
-      Rough: <span>{{ original_scores.rough }}</span> |
-      Smooth: <span>{{ original_scores.smooth }}</span>
+  <!-- Original -->
+  <h1 class="section-title">Original</h1>
+  <div class="row">
+    <div class="method-block">
+      <img class="img" src="/static/{{ preview_path }}/{{ filename }}.png" alt="original">
+      <img class="hist" id="orig_hist" src="{{ baseline_hist_url }}" alt="original histogram">
+      <div class="metrics mono" style="margin-top:8px;">
+        Glossy: {{ baseline_scores.glossy }} |
+        Matte: {{ baseline_scores.matte }} |
+        Rough: {{ baseline_scores.rough }} |
+        Smooth: {{ baseline_scores.smooth }} |
+        Regular: {{ baseline_scores.regular }} |
+        Random: {{ baseline_scores.random }} |
+        Coarse: {{ baseline_scores.coarse }} |
+        Fine: {{ baseline_scores.fine }}<br>
+        Skewness: {{ baseline_skew }}
+      </div>
     </div>
   </div>
 
   <hr>
 
-  <!-- Gloss Editor -->
-  <h2>Gloss Editing</h2>
-  <div style="display: flex; justify-content: center;">
-    {% for method in methods %}
+  <!-- Row 1: Gloss editing -->
+  <h2 class="section-title">Gloss Editing (Bs / Scurve / Clip)</h2>
+  <div class="row">
+    {% for method in gloss_methods %}
     <div class="method-block">
       <h3>{{ method|title }}</h3>
-      <img id="{{ method }}_img" width="256" height="256" src="/static/{{ preview_path }}/{{ filename }}.png">
-      <br>
-      <input type="range" id="{{ method }}_slider" min="-10" max="10" step="1 value="0"
+      <img id="{{ method }}_img" class="img" src="/static/{{ preview_path }}/{{ filename }}.png" alt="{{ method }}">
+      <input type="range" id="{{ method }}_slider" min="-10" max="10" step="1" value="0"
              oninput="updateGloss('{{ method }}')">
-      <div class="slider-value">Value: <span id="{{ method }}_val">0</span></div>
-      <div>Glossy: <span id="{{ method }}_gloss">--</span></div>
-      <div>Matte: <span id="{{ method }}_matte">--</span></div>
-      <div>Sim Img: <span id="{{ method }}_simimg">--</span></div>
-      <div>STSIM: <span id="{{ method }}_stsim">--</span></div>
-      <div>SW: <span id="{{ method }}_sw">--</span></div>
-      <div>isNatural: <span id="{{ method }}_nat">--</span></div>
+      <div class="slider-value mono">Value: <span id="{{ method }}_val">0</span></div>
+      <div class="metrics mono">
+        Glossy: <span id="{{ method }}_a1">--</span><br>
+        Matte: <span id="{{ method }}_a2">--</span><br>
+        STSIM: <span id="{{ method }}_stsim">--</span> |
+        SW: <span id="{{ method }}_sw">--</span><br>
+        SimImg: <span id="{{ method }}_simimg">--</span> |
+        isNatural: <span id="{{ method }}_nat">--</span><br>
+        Skewness: <span id="{{ method }}_skew">--</span>
+      </div>
+      <img id="{{ method }}_hist" class="hist" src="{{ baseline_hist_url }}" alt="{{ method }} histogram">
     </div>
     {% endfor %}
   </div>
 
   <hr>
 
-  <!-- Roughness Editor -->
-  <h2>Roughness Editing</h2>
-  <div style="display: flex; justify-content: center;">
+  <!-- Row 2: Roughness editing -->
+  <h2 class="section-title">Roughness Editing (Bs / Clip)</h2>
+  <div class="row">
     {% for method in rough_methods %}
     <div class="method-block">
       <h3>{{ method|title }}</h3>
-      <img id="rough_{{ method }}_img" width="256" height="256" src="/static/{{ preview_path }}/{{ filename }}.png">
-      <br>
-      <input type="range" class="slider" id="rough_{{ method }}_slider" min="-10" max="10" step="1" value="0"
+      <img id="rough_{{ method }}_img" class="img" src="/static/{{ preview_path }}/{{ filename }}.png" alt="rough {{ method }}">
+      <input type="range" id="rough_{{ method }}_slider" min="-10" max="10" step="1" value="0"
              oninput="updateRough('{{ method }}')">
-      <div class="slider-value">Value: <span id="rough_{{ method }}_val">0</span></div>
-      <div>Rough: <span id="rough_{{ method }}_rough">--</span></div>
-      <div>Smooth: <span id="rough_{{ method }}_smooth">--</span></div>
-      <div>Sim Img: <span id="rough_{{ method }}_simimg">--</span></div>
-      <div>STSIM: <span id="rough_{{ method }}_stsim">--</span></div>
-      <div>SW: <span id="rough_{{ method }}_sw">--</span></div>
-      <div>isNatural: <span id="rough_{{ method }}_nat">--</span></div>
+      <div class="slider-value mono">Value: <span id="rough_{{ method }}_val">0</span></div>
+      <div class="metrics mono">
+        Rough: <span id="rough_{{ method }}_a1">--</span><br>
+        Smooth: <span id="rough_{{ method }}_a2">--</span><br>
+        STSIM: <span id="rough_{{ method }}_stsim">--</span> |
+        SW: <span id="rough_{{ method }}_sw">--</span><br>
+        SimImg: <span id="rough_{{ method }}_simimg">--</span> |
+        isNatural: <span id="rough_{{ method }}_nat">--</span><br>
+        Skewness: <span id="rough_{{ method }}_skew">--</span>
+      </div>
+      <img id="rough_{{ method }}_hist" class="hist" src="{{ baseline_hist_url }}" alt="rough {{ method }} histogram">
     </div>
     {% endfor %}
-    <!-- Roughness Editing - CLIP Any -->
-    <div class="method-block">
-      <h3>CLIP Any</h3>
-      <img id="rough_clip_any_img" class="slider" width="256" height="256" src="/static/{{ preview_path }}/{{ filename }}.png"><br>
-
-      <!-- Attribute Dropdown -->
-      <label for="clip_any_attr">Attribute:</label>
-      <select id="clip_any_attr" onchange="updateClipAny()">
-        <option value="glossy">Glossy</option>
-        <option value="rough">Rough</option>
-        <option value="highlighted">Highlighted</option>
-        <option value="saturation">Saturation</option>
-        <option value="sharp">Sharp</option>
-        <option value="fine_scale">Fine</option>
-        <option value="uniformity">Uniformity</option>
-        <option value="wet">Wet</option>
-        <option value="warm_toned">Warm toned</option>
-        <option value="brightness">Bright</option>
-        <option value="regular">Regular</option>
-        <option value="metallic">Metallic</option>
-        <option value="colorfulness">Colorfulness</option>
-        <option value="iridescent">Iridescent</option>
-        <option value="speckled">Speckled</option>
-        <option value="contrast">Contrast</option>
-        <option value="shadowed">Shadowed</option>
-        <option value="texture_depth">Texture_depth</option>
-        <option value="chalky">Chalky</option>
-        <!-- Hue options with emoji color patches -->
-        <option value="hue_red">hue:red 🟥</option>
-        <option value="hue_orange">hue:orange 🟧</option>
-        <option value="hue_yellow">hue:yellow 🟨</option>
-        <option value="hue_chartreuse">hue:chartreuse 🟩</option>
-        <option value="hue_green">hue:green 🟢</option>
-        <option value="hue_teal">hue:teal 🟦</option>
-        <option value="hue_azure">hue:azure 🔵</option>
-        <option value="hue_blue">hue:blue 🔷</option>
-        <option value="hue_violet">hue:violet 🟪</option>
-        <option value="hue_magenta">hue:magenta 💗</option>
-        <option value="hue_rose">hue:rose 🌸</option>
-        <!-- Add more attributes if needed -->
-      </select><br>
-
-      <!-- Strength Slider -->
-      <input type="range" id="rough_clip_any_slider" min="-10" max="10" step="1" value="0" oninput="updateClipAny()">
-      <div class="slider-value">Value: <span id="rough_clip_any_val">0</span></div>
-
-      <div>Glossy: <span id="rough_clip_any_gloss">--</span></div>
-      <div>Matte: <span id="rough_clip_any_matte">--</span></div>
-      <div>Rough: <span id="rough_clip_any_rough">--</span></div>
-      <div>Smooth: <span id="rough_clip_any_smooth">--</span></div>
-      <div>Sim Img: <span id="rough_clip_any_simimg">--</span></div>
-      <div>STSIM: <span id="rough_clip_any_stsim">--</span></div>
-      <div>SW: <span id="rough_clip_any_sw">--</span></div>
-      <div>isNatural: <span id="rough_clip_any_nat">--</span></div>
-    </div>
-
   </div>
+
+  <hr>
+
+  <!-- Row 3: Pattern editing -->
+  <h2 class="section-title">Pattern Editing (Regular / Random / Coarse)</h2>
+  <div class="row">
+    {% for attr in pattern_attrs %}
+    <div class="method-block">
+      <h3>{{ attr|title }}</h3>
+      <img id="pattern_{{ attr }}_img" class="img" src="/static/{{ preview_path }}/{{ filename }}.png" alt="{{ attr }}">
+      <input type="range" id="pattern_{{ attr }}_slider" min="-10" max="10" step="1" value="0"
+             oninput="updatePattern('{{ attr }}')">
+      <div class="slider-value mono">Value: <span id="pattern_{{ attr }}_val">0</span></div>
+      <div class="metrics mono">
+        Pos: <span id="pattern_{{ attr }}_a1">--</span><br>
+        Neg: <span id="pattern_{{ attr }}_a2">--</span><br>
+        STSIM: <span id="pattern_{{ attr }}_stsim">--</span> |
+        SW: <span id="pattern_{{ attr }}_sw">--</span><br>
+        SimImg: <span id="pattern_{{ attr }}_simimg">--</span> |
+        isNatural: <span id="pattern_{{ attr }}_nat">--</span><br>
+        Skewness: <span id="pattern_{{ attr }}_skew">--</span>
+      </div>
+      <img id="pattern_{{ attr }}_hist" class="hist" src="{{ baseline_hist_url }}" alt="{{ attr }} histogram">
+    </div>
+    {% endfor %}
+  </div>
+
+  <hr>
+
+  <!-- Survey -->
   <h3>Answer the following questions:</h3>
+  <div>
+    <p>Can this be made glossier?
+      <button onclick="submitAnswer('glossier', true)">Yes</button>
+      <button onclick="submitAnswer('glossier', false)">No</button>
+    </p>
+    <p>Can this be made more matte?
+      <button onclick="submitAnswer('matte', true)">Yes</button>
+      <button onclick="submitAnswer('matte', false)">No</button>
+    </p>
+    <p>Can this be made rougher?
+      <button onclick="submitAnswer('rough', true)">Yes</button>
+      <button onclick="submitAnswer('rough', false)">No</button>
+    </p>
+    <p>Can this be made smoother?
+      <button onclick="submitAnswer('smooth', true)">Yes</button>
+      <button onclick="submitAnswer('smooth', false)">No</button>
+    </p>
+  </div>
 
-<!-- Yes/No Questions -->
-<div>
-  <p>Can this be made glossier? 
-    <button onclick="submitAnswer('glossier', true)">Yes</button>
-    <button onclick="submitAnswer('glossier', false)">No</button>
-  </p>
-  <p>Can this be made more matte? 
-    <button onclick="submitAnswer('matte', true)">Yes</button>
-    <button onclick="submitAnswer('matte', false)">No</button>
-  </p>
-  <p>Can this be made rougher? 
-    <button onclick="submitAnswer('rough', true)">Yes</button>
-    <button onclick="submitAnswer('rough', false)">No</button>
-  </p>
-  <p>Can this be made smoother? 
-    <button onclick="submitAnswer('smooth', true)">Yes</button>
-    <button onclick="submitAnswer('smooth', false)">No</button>
-  </p>
-</div>
-
-<!-- Best Method Questions -->
-<h3>Which method best enhances the attributes?</h3>
-<div>
-  <p>Best method for glossiness:</p>
-  <button onclick="submitAnswer('glossiness', 'bs')">BS</button>
-  <button onclick="submitAnswer('glossiness', 'scurve')">SCurve</button>
-  <button onclick="submitAnswer('glossiness', 'clip')">CLIP</button>
-</div>
-
-<div>
-  <p>Best method for roughness:</p>
-  <button onclick="submitAnswer('roughness', 'bs')">BS</button>
-  <button onclick="submitAnswer('roughness', 'clip')">CLIP</button>
-</div>
-
-<script>
-  function submitAnswer(attr, value) {
-    fetch(`/api/submit_answer/?index={{ index }}&domain={{ domain }}&attribute=${attr}&value=${value}`)
-      .then(r => r.json())
-      .then(data => alert(data.message));
-  }
-</script>
-
+  <h3>Which method best enhances the attributes?</h3>
+  <div>
+    <p>Best method for glossiness:
+      <button onclick="submitAnswer('glossiness', 'bs')">BS</button>
+      <button onclick="submitAnswer('glossiness', 'scurve')">SCurve</button>
+      <button onclick="submitAnswer('glossiness', 'clip')">CLIP</button>
+    </p>
+    <p>Best method for roughness:
+      <button onclick="submitAnswer('roughness', 'bs')">BS</button>
+      <button onclick="submitAnswer('roughness', 'clip')">CLIP</button>
+    </p>
+  </div>
 
 </body>
 </html>

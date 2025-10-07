@@ -13,10 +13,10 @@ generator = dnnlib.util.construct_class_by_name(**G_kwargs)
 generator.load_state_dict(torch.load("G_ema_weights.pt", map_location='cpu'), strict=False)
 generator.eval().to(device)
 
-os.makedirs("real_latent_9475/generated", exist_ok=True)
-os.makedirs("static/previews/generated_9475", exist_ok=True)
+os.makedirs("D:\projects\python\ViSiProg\interface\static\GENE_latent", exist_ok=True)
+os.makedirs("D:\projects\python\ViSiProg\interface\static\GENE", exist_ok=True)
 
-N = 10000  # number of synthetic textures to generate
+N = 100000  # number of synthetic textures to generate
 
 for i in range(N):
     z = torch.randn(1, generator.z_dim).to(device)
@@ -26,7 +26,7 @@ for i in range(N):
     img = generator.synthesis(ss=s_code, noise_mode='const')
     img = (img.clamp(-1, 1) + 1) / 2
 
-    save_image(img, f"static/previews/generated_9475/{i}.pt.png")
-    torch.save(s_code.detach().cpu(), f"real_latent_9475/generated/{i}.pt")
+    save_image(img, f"D:\projects\python\ViSiProg\interface\static\GENE\{i}.png")
+    torch.save(s_code.detach().cpu(), f"D:\projects\python\ViSiProg\interface\static\GENE_latent\{i}.pt")
 
 print("Generated synthetic dataset.")
