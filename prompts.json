@@ -77,6 +77,26 @@
   "fine": [
     "a fine texture"
   ],
+  "deep": [
+    "a texture with strong depth and relief",
+    "pronounced height variations across the surface",
+    "deep grooves and tall ridges",
+    "high-relief sculpted material",
+    "thick embossing creating shadows",
+    "substantial depth giving 3D presence",
+    "a deeply contoured texture"
+  ],
+
+  "shallow": [
+    "a nearly flat, shallow texture",
+    "minimal relief with tiny variations",
+    "smooth surface with little height",
+    "low-relief, barely raised details",
+    "flat embossing with no depth",
+    "a thin, superficial contour",
+    "an almost planar texture"
+  ],
+
   "grayscale": [
     "A picture of a grayscale texture",
     "A picture of a black-and-white texture",

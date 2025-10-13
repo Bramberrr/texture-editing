@@ -87,12 +87,15 @@ def edit_texture(request, domain, index):
         if a == "rough":
             baseline["rough"]  = float(s1)
             baseline["smooth"] = float(s2)
-        elif a == "regular":
-            baseline["regular"] = float(s1)
-            baseline["random"]  = float(s2)
+        elif a == "random":
+            baseline["random"] = float(s1)
+            baseline["regular"]  = float(s2)
         elif a == "coarse":
             baseline["coarse"] = float(s1)
             baseline["fine"]   = float(s2)
+        elif a == "depth":
+            baseline["deep"] = float(s1)
+            baseline["shallow"]   = float(s2)
 
     # preview_path for template usage
     if domain == 'nuur':
@@ -111,7 +114,7 @@ def edit_texture(request, domain, index):
         # Rows:
         "gloss_methods": ["bs", "scurve", "clip"],  # first row
         "rough_methods": ["bs", "clip"],            # second row
-        "pattern_attrs": ["regular", "random", "coarse"],  # third row (clip)
+        "pattern_attrs": ["depth", "random", "coarse"],  # third row (clip)
         # Baseline (original) info:
         "baseline_scores": {k: round(v, 3) for k, v in baseline.items()},
         "baseline_hist_url": baseline_hist_url,

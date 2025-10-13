@@ -109,6 +109,8 @@
         Regular: {{ baseline_scores.regular }} |
         Random: {{ baseline_scores.random }} |
         Coarse: {{ baseline_scores.coarse }} |
+        Deep: {{ baseline_scores.deep }} |
+        Shallow: {{ baseline_scores.shallow }} |
         Fine: {{ baseline_scores.fine }}<br>
         Skewness: {{ baseline_skew }}
       </div>
@@ -170,7 +172,7 @@
   <hr>
 
   <!-- Row 3: Pattern editing -->
-  <h2 class="section-title">Pattern Editing (Regular / Random / Coarse)</h2>
+  <h2 class="section-title">Pattern Editing (Depth / Random / Coarse)</h2>
   <div class="row">
     {% for attr in pattern_attrs %}
     <div class="method-block">

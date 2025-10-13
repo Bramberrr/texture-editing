@@ -20,6 +20,7 @@ from typing import Optional
 import matplotlib
 matplotlib.use("Agg")   # use headless backend
 import matplotlib.pyplot as plt
+import math
 # ------------------------------
 # Settings and Initialization
 # ------------------------------
@@ -56,7 +57,7 @@ stsim_loss = STSIM_VGG([5900,10],grayscale=False).to(device).double()
 
 #is natural predictor
 ts.add_safe_globals([np.core.multiarray.scalar])
-ckpt = torch.load("trained_dir/best.pt",map_location="cpu",weights_only=False)
+ckpt = torch.load("trained_dirs/best.pt",map_location="cpu",weights_only=False)
 model = convnext_tiny(weights=ConvNeXt_Tiny_Weights.IMAGENET1K_V1)
 in_features = model.classifier[2].in_features
 model.classifier[2] = torch.nn.Linear(in_features, len(ckpt["classes"]))
@@ -132,7 +133,7 @@ attr_pairs = {
     "matte": ("glossy", "matte"),
     "rough": ("rough", "smooth"),
     "smooth": ("rough", "smooth"),
-    "regular": ("regular", "random"),
+    "depth": ("deep", "shallow"),
     "random": ("random", "regular"),
     "coarse": ("coarse", "fine"),
     "fine": ("fine", "coarse"),
@@ -170,12 +171,17 @@ def compute_luminance_histogram_and_skew(img_tensor, save_path=None):
     
 def CLIP_editing(generator, latent_s, weights_deltas, alpha, attr, device):
     if attr == "glossy":
-        s_dir = torch.zeros_like(latent_s).to(device)
-        s_dir[:,12318] = latent_s[:, 12318] * 0.05
-        s_dir[:,12287] = latent_s[:, 12287] * 0.2
-        s_dir[:,12308] = latent_s[:, 12308] * 0.02
+        # s_dir = torch.zeros_like(latent_s).to(device)
+        s_dir = torch.load("trained_dirs/glossy.pt").to(device) * latent_s
+        # s_dir[:,12318] = latent_s[:, 12318] * 0.01
+        # s_dir[:,12287] = latent_s[:, 12287] * 0.2
+        # s_dir[:,12020] = latent_s[:, 12020] * 0.4 # metallic
+        
+
     elif attr == "rough":
-        s_dir = torch.load("trained_dirs/rough.pt").to(device) * 0.2
+        s_dir = torch.zeros_like(latent_s).to(device)
+        s_dir[:,11933] = latent_s[:, 11933] * 0.4 
+        # s_dir = torch.load("trained_dirs/rough_weights.pt").to(device)  * 2
     elif attr == "coarse":
         s_dir = torch.load("trained_dirs/coarse_full.pt").to(device) * 0.2
         s_dir[0:4]=0
@@ -189,21 +195,22 @@ def CLIP_editing(generator, latent_s, weights_deltas, alpha, attr, device):
             p = f@feat1.T
             n =  f@feat2.T
             ext = F.normalize(torch.cat([f, p,n] , dim=1))
-        if attr == "regular":
-            if alpha > 0:
-                pack = torch.load('trained_dirs/full_cluster_pack_period_regular.pt', map_location='cpu')
-                interp = FullDirectionInterpolator(pack['cluster']['medoid_ext_feats'], pack['directions_full'], pack['s_offsets'], device=device, tau=float(pack['tau']))
-                interp.load_state_dict(torch.load('trained_dirs/full_interpolator_period_regular.pt', map_location='cpu'))
-                s_dir = interp(ext, zero_layers=[0,13,14,15]) *0.5
-            else: 
-                pack = torch.load('trained_dirs/full_cluster_pack_pattern_random.pt', map_location='cpu')
-                interp = FullDirectionInterpolator(pack['cluster']['medoid_ext_feats'], pack['directions_full'], pack['s_offsets'], device=device, tau=float(pack['tau']))
-                interp.load_state_dict(torch.load('trained_dirs/full_interpolator_pattern_random.pt', map_location='cpu'))
-                s_dir = -interp(ext, zero_layers=[0,1,2,3,4,5,6,7,8,11,12,13,14,15])
-            # s_dir = torch.zeros_like(latent_s).to(device)
-            # s_dir[:,2602] = latent_s[:, 2602]
-            # s_dir[:,4491] = latent_s[:, 4491]
-            # s_dir[:,3603] = latent_s[:, 3603]
+        if attr == "depth":
+            s_dir = torch.load("trained_dirs/depth.pt").to(device) * 0.5
+            # if alpha > 0:
+            #     pack = torch.load('trained_dirs/full_cluster_pack_period_regular.pt', map_location='cpu')
+            #     interp = FullDirectionInterpolator(pack['cluster']['medoid_ext_feats'], pack['directions_full'], pack['s_offsets'], device=device, tau=float(pack['tau']))
+            #     interp.load_state_dict(torch.load('trained_dirs/full_interpolator_period_regular.pt', map_location='cpu'))
+            #     s_dir = interp(ext, zero_layers=[0,13,14,15]) *0.5
+            # else: 
+            #     pack = torch.load('trained_dirs/full_cluster_pack_pattern_random.pt', map_location='cpu')
+            #     interp = FullDirectionInterpolator(pack['cluster']['medoid_ext_feats'], pack['directions_full'], pack['s_offsets'], device=device, tau=float(pack['tau']))
+            #     interp.load_state_dict(torch.load('trained_dirs/full_interpolator_pattern_random.pt', map_location='cpu'))
+            #     s_dir = -interp(ext, zero_layers=[0,1,2,3,4,5,6,7,8,11,12,13,14,15])
+            # # s_dir = torch.zeros_like(latent_s).to(device)
+            # # s_dir[:,2602] = latent_s[:, 2602]
+            # # s_dir[:,4491] = latent_s[:, 4491]
+            # # s_dir[:,3603] = latent_s[:, 3603]
         elif attr == "random":
             # s_dir = torch.zeros_like(latent_s).to(device)
             # s_dir[:,12207] = latent_s[:, 12207]
@@ -213,6 +220,36 @@ def CLIP_editing(generator, latent_s, weights_deltas, alpha, attr, device):
             s_dir = interp(ext, zero_layers=[0,1,2,3,4,5,6,7,8,9,10,12,13,14,15]) 
     img_clip = generator.synthesis(ss=latent_s + s_dir * alpha, weights_deltas=weights_deltas, noise_mode='const').clamp(-1, 1).squeeze(0)
     return (img_clip + 1) / 2
+
+def apply_bs_gradual(img, effect: str, strength: float, device):
+    """
+    Apply band_sifting_editing in staged increments:
+      - for strength in (2^n, 2^(n+1)) -> apply n passes of 2.0, then one pass of strength / 2^n
+      - for strength < 2.0 -> single pass of `strength`
+    """
+    strength = float(strength)
+    edited = img
+
+    if strength <= 0:
+        return img
+
+    if strength < 2.0:
+        return band_sifting_editing(edited, effect=effect, strength=strength).to(device)
+
+    # strength >= 2
+    n = int(math.floor(math.log2(strength)))           # number of 2.0 passes
+    n = max(1, n)                                      # ensure at least one pass when >= 2
+
+    # n passes at strength=2.0
+    for _ in range(n):
+        edited = band_sifting_editing(edited, effect=effect, strength=2.0).to(device)
+
+    # final residual pass
+    residual = strength / (2.0 ** n)                   # e.g., s/2, s/4, s/8, ...
+    if residual > 0:
+        edited = band_sifting_editing(edited, effect=effect, strength=residual).to(device)
+
+    return edited
 
 @torch.no_grad()
 def run_inference(filename, method, strength, pt_dir="real_latent", attr="glossy"):
@@ -237,7 +274,7 @@ def run_inference(filename, method, strength, pt_dir="real_latent", attr="glossy
     # === Dispatch editing ===
     if method == "bs":
         effect = "shine" if attr in ["glossy", "matte"] else "rough"
-        edited = band_sifting_editing(img, effect=effect, strength=strength).to(device)
+        edited = apply_bs_gradual(img, effect=effect, strength=strength, device=device)
     elif method == "scurve":
         edited = S_Transformation(img, lam=remap_strengths(strength)).to(device)
     elif method == "clip":

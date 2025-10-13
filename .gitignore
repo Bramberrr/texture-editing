@@ -5,3 +5,5 @@ real_latent_9475_sw
 real_latent_9475_lpips
 trained_dirs
 feature_5900_noabsb.pt
+real_latent_9475_lpips_ws
+real_latent_9475_selected
