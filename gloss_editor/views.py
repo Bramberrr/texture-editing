@@ -3,8 +3,8 @@ import os
 import random
 from django.shortcuts import render
 from django.http import JsonResponse
-from .inference import run_inference
-
+from .inference import run_inference, detect_safe_ranges_from_file
+import json
 # -------------------------
 # Dataset selection
 # -------------------------
@@ -36,7 +36,9 @@ def _resolve_dirs(domain: str):
 # Dataset browser
 # -------------------------
 def home(request, domain):
-    # cleanup tmp
+    import json
+
+    # Cleanup tmp
     tmp_dir = 'static/tmp'
     if os.path.exists(tmp_dir):
         for f in os.listdir(tmp_dir):
@@ -45,16 +47,42 @@ def home(request, domain):
                 os.remove(f_path)
 
     pt_dir, preview_dir = _resolve_dirs(domain)
-
     pt_files = sorted([f for f in os.listdir(pt_dir) if f.endswith('.pt')])
-    texture_items = [
-        {"index": i, "img": f"{preview_dir}/{f}.png", "filename": f, "domain": domain}
-        for i, f in enumerate(pt_files)
-    ]
-    if len(texture_items) > 50:
+
+    # Load label dictionary
+    label_path = "captions_labels.json"
+    labels_dict = {}
+    if os.path.exists(label_path):
+        with open(label_path, "r", encoding="utf-8") as f:
+            labels_dict = json.load(f)
+
+    # Search query
+    query = request.GET.get("q", "").strip().lower()
+    query_terms = [t.strip() for t in query.replace(",", " ").split() if t]
+
+    texture_items = []
+    for i, f in enumerate(pt_files):
+        fname = f
+        labels = labels_dict.get(fname+".png", [])
+        # Include item if matches search or no search
+        if not query_terms or any(q in labels for q in query_terms):
+            texture_items.append({
+                "index": i,
+                "img": f"{preview_dir}/{fname}.png",
+                "filename": f,
+                "domain": domain,
+                "labels": labels,
+            })
+
+    # Limit to 50 random samples if no query
+    if not query_terms and len(texture_items) > 50:
         texture_items = random.sample(texture_items, 50)
 
-    return render(request, 'home.html', {"texture_items": texture_items, "domain": domain})
+    return render(request, "home.html", {
+        "texture_items": texture_items,
+        "domain": domain,
+        "query": query,
+    })
 
 # -------------------------
 # Texture editor
@@ -63,7 +91,7 @@ def edit_texture(request, domain, index):
     pt_dir, preview_dir = _resolve_dirs(domain)
     pt_files = sorted([f for f in os.listdir(pt_dir) if f.endswith('.pt')])
     filename = pt_files[int(index)]
-
+    safe_ranges = detect_safe_ranges_from_file(filename, pt_dir)
     # --- Baseline from original (method="none", strength=0) ---
     # We want similarities for ALL attributes + a single baseline histogram.
     attr_list = ["glossy", "matte", "rough", "smooth", "regular", "random", "coarse", "fine"]
@@ -73,7 +101,7 @@ def edit_texture(request, domain, index):
 
     # Use glossy call to produce the baseline histogram (any attr works; image is unchanged)
     (
-        _, sim_attr1, sim_attr2, _, _, _, _, hist_url, skew_val
+        _, sim_attr1, sim_attr2, _, _, _, _, hist_url, skew_val, caption
     ) = run_inference(filename, method="none", strength=0, pt_dir=pt_dir, attr="glossy")
     baseline_hist_url = hist_url
     baseline_skew = skew_val
@@ -82,7 +110,7 @@ def edit_texture(request, domain, index):
 
     # Gather remaining attributes
     for a in ["rough", "regular", "coarse"]:
-        _, s1, s2, _, _, _, _, _, _ = run_inference(filename, method="none", strength=0, pt_dir=pt_dir, attr=a)
+        _, s1, s2, _, _, _, _, _, _, _ = run_inference(filename, method="none", strength=0, pt_dir=pt_dir, attr=a)
         # map each pair back
         if a == "rough":
             baseline["rough"]  = float(s1)
@@ -105,20 +133,29 @@ def edit_texture(request, domain, index):
         preview_path = f"previews/nuur_9475/{tone}_skin"
     else:
         preview_path = 'previews/generated_9475'
+    labels = []
+    label_path = "captions_labels.json"
+    if os.path.exists(label_path):
+        with open(label_path, "r", encoding="utf-8") as f:
+            labels_dict = json.load(f)
+            fname = filename+".png"
+            labels = labels_dict.get(fname, [])
 
     return render(request, "edit.html", {
         "index": index,
         "filename": filename,
+        "caption": caption,
         "domain": domain,
         "preview_path": preview_path,
-        # Rows:
-        "gloss_methods": ["bs", "scurve", "clip"],  # first row
-        "rough_methods": ["bs", "clip"],            # second row
+        "labels": labels,
+        "gloss_methods": ["bs", "bs-metal", "clip-styleGAN"],  # first row
+        "rough_methods": ["bs", "clip-styleGAN"],            # second row
         "pattern_attrs": ["depth", "random", "coarse"],  # third row (clip)
         # Baseline (original) info:
         "baseline_scores": {k: round(v, 3) for k, v in baseline.items()},
         "baseline_hist_url": baseline_hist_url,
         "baseline_skew": baseline_skew,
+        "safe_ranges": safe_ranges,
     })
 
 # -------------------------
@@ -137,11 +174,12 @@ def update_image(request):
 
     (
         img_url, sim_attr1, sim_attr2, sim_img, stsim, sw, nat,
-        hist_url, skew_val
+        hist_url, skew_val, caption
     ) = run_inference(filename, method, strength, pt_dir, attr)
 
     return JsonResponse({
         "img_url": img_url,
+        "caption" : caption,
         "sim_attr1": round(float(sim_attr1), 3),
         "sim_attr2": round(float(sim_attr2), 3),
         "sim_img": round(float(sim_img), 3),

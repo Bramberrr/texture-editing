@@ -18,6 +18,16 @@
   accent-color: var(--slider-color, blue); /* fallback is blue */
     }
     .hist { width: 256px; height: 160px; display: block; margin: 8px auto 0; border: 1px solid #ddd; }
+    .caption {
+      font-size: 20px;
+      font-weight: bold;
+      color: #222;
+      background: #f8f8e8;   /* soft yellow-beige highlight */
+      padding: 4px 8px;
+      margin-top: 4px;
+      border-radius: 4px;
+      display: inline-block;
+    }
     .section-title { text-align: center; margin-top: 24px; }
   </style>
   <script>
@@ -43,6 +53,7 @@
           qs(method + "_nat").innerText = data.nat;
           qs(method + "_skew").innerText = data.skew;
           qs(method + "_hist").src = data.hist_url;
+          qs(method + "_caption").innerText = data.caption;
           setSliderColor(slider, data.nat === true);
         });
     }
@@ -63,6 +74,7 @@
           qs("rough_" + method + "_nat").innerText = data.nat;
           qs("rough_" + method + "_skew").innerText = data.skew;
           qs("rough_" + method + "_hist").src = data.hist_url;
+          qs("rough_" + method + "_caption").innerText = data.caption;
           setSliderColor(slider, data.nat === true);
         });
     }
@@ -71,7 +83,7 @@
     function updatePattern(attr) {
       const slider = qs(`pattern_${attr}_slider`);
       const s = slider.value;
-      fetch(`/api/update_image/?index={{ index }}&method=clip&strength=${s}&domain={{ domain }}&attr=${attr}`)
+      fetch(`/api/update_image/?index={{ index }}&method=clip-styleGAN&strength=${s}&domain={{ domain }}&attr=${attr}`)
         .then(r => r.json()).then(data => {
           qs(`pattern_${attr}_img`).src = data.img_url;
           qs(`pattern_${attr}_val`).innerText = s;
@@ -83,6 +95,7 @@
           qs(`pattern_${attr}_nat`).innerText = data.nat;
           qs(`pattern_${attr}_skew`).innerText = data.skew;
           qs(`pattern_${attr}_hist`).src = data.hist_url;
+          qs(`pattern_${attr}_caption`).innerText = data.caption;
           setSliderColor(slider, data.nat === true);
         });
     }
@@ -101,6 +114,22 @@
     <div class="method-block">
       <img class="img" src="/static/{{ preview_path }}/{{ filename }}.png" alt="original">
       <img class="hist" id="orig_hist" src="{{ baseline_hist_url }}" alt="original histogram">
+      {% if labels %}
+        <div style="text-align:center; margin-top:10px;">
+          {% for lbl in labels %}
+            <span style="
+              display:inline-block;
+              background:#eef;
+              border:1px solid #99f;
+              border-radius:4px;
+              padding:2px 6px;
+              margin:2px;
+              font-size:14px;
+            ">{{ lbl }}</span>
+          {% endfor %}
+        </div>
+      {% endif %}
+      <div class="caption">{{ caption }}</div>
       <div class="metrics mono" style="margin-top:8px;">
         Glossy: {{ baseline_scores.glossy }} |
         Matte: {{ baseline_scores.matte }} |
@@ -129,6 +158,19 @@
       <input type="range" id="{{ method }}_slider" min="-10" max="10" step="1" value="0"
              oninput="updateGloss('{{ method }}')">
       <div class="slider-value mono">Value: <span id="{{ method }}_val">0</span></div>
+      {% if method == "bs" %}
+      <div style="background:#e6ffe6; border:1px solid #00aa00; padding:4px; margin-top:4px; font-size:13px;">
+        Safe range: {{ safe_ranges.bs }}
+      </div>
+      {% elif method == "bs-metal" %}
+      <div style="background:#e6ffe6; border:1px solid #00aa00; padding:4px; margin-top:4px; font-size:13px;">
+        Safe range: {{ safe_ranges.metal }}
+      </div>
+      {% elif method == "clip-styleGAN" %}
+      <div style="background:#e6ffe6; border:1px solid #00aa00; padding:4px; margin-top:4px; font-size:13px;">
+        Safe range: {{ safe_ranges.clip }}
+      </div>
+      {% endif %}
       <div class="metrics mono">
         Glossy: <span id="{{ method }}_a1">--</span><br>
         Matte: <span id="{{ method }}_a2">--</span><br>
@@ -138,6 +180,7 @@
         isNatural: <span id="{{ method }}_nat">--</span><br>
         Skewness: <span id="{{ method }}_skew">--</span>
       </div>
+      <div class="caption"><span id="{{ method }}_caption">--</span></div>
       <img id="{{ method }}_hist" class="hist" src="{{ baseline_hist_url }}" alt="{{ method }} histogram">
     </div>
     {% endfor %}
@@ -164,6 +207,7 @@
         isNatural: <span id="rough_{{ method }}_nat">--</span><br>
         Skewness: <span id="rough_{{ method }}_skew">--</span>
       </div>
+      <div class="caption"><span id="rough_{{ method }}_caption">--</span></div>
       <img id="rough_{{ method }}_hist" class="hist" src="{{ baseline_hist_url }}" alt="rough {{ method }} histogram">
     </div>
     {% endfor %}
@@ -190,6 +234,7 @@
         isNatural: <span id="pattern_{{ attr }}_nat">--</span><br>
         Skewness: <span id="pattern_{{ attr }}_skew">--</span>
       </div>
+      <div class="caption"><span id="pattern_{{ attr }}_caption">--</span></div>
       <img id="pattern_{{ attr }}_hist" class="hist" src="{{ baseline_hist_url }}" alt="{{ attr }} histogram">
     </div>
     {% endfor %}

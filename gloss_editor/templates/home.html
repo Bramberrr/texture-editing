@@ -1,11 +1,33 @@
 <!DOCTYPE html>
 <html>
-<head><title>Select Texture</title></head>
+<head>
+  <title>Select Texture</title>
+  <style>
+    .search-box { margin-bottom: 20px; }
+    .label-tag {
+      display: inline-block;
+      background: #eef;
+      border: 1px solid #99f;
+      border-radius: 4px;
+      padding: 2px 6px;
+      margin: 2px;
+      font-size: 12px;
+    }
+  </style>
+</head>
 <body>
 <h2>Select a Texture to Edit ({{ domain }})</h2>
+
 <form method="get">
   <button type="submit">🔄 Refresh 50 Random Textures</button>
 </form>
+
+<form method="get" class="search-box">
+  <input type="text" name="q" placeholder="Search by label(s), e.g. red brick or metal"
+         value="{{ query|default:'' }}" size="40">
+  <button type="submit">🔍 Search</button>
+</form>
+
 <div style="display: flex; flex-wrap: wrap;">
   {% for item in texture_items %}
     <div style="margin: 10px; text-align: center;">
@@ -13,6 +35,13 @@
         <img src="/{{ item.img }}" width="128" height="128"><br>
         {{ item.index }}
       </a>
+      {% if item.labels %}
+        <div>
+          {% for lbl in item.labels %}
+            <span class="label-tag">{{ lbl }}</span>
+          {% endfor %}
+        </div>
+      {% endif %}
     </div>
   {% endfor %}
 </div>
