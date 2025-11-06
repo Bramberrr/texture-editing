@@ -6,4 +6,8 @@ real_latent_9475_lpips
 trained_dirs
 feature_5900_noabsb.pt
 real_latent_9475_lpips_ws
-real_latent_9475_selected
+real_latent_9475_lpips_w_selected
+plot
+out
+runs
+runs_w

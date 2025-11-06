@@ -1,0 +1,19 @@
+{
+  "accuracy_total": 0.6948798298835754,
+  "accuracy_nat": 0.42424243688583374,
+  "accuracy_unn": 0.9655172228813171,
+  "best_natural_prompts": [
+    "a genuine texture showing random irregularities",
+    "a texture photograph with natural color tones",
+    "a realistic depiction of surface microstructure",
+    "a photo of natural material with balanced contrast",
+    "a photograph of surface texture with depth and realism"
+  ],
+  "best_unnatural_prompts": [
+    "an artificial texture with unrealistic highlights",
+    "a digitally produced texture with banding",
+    "an oversharpened image of a texture",
+    "a poorly rendered texture with visible noise",
+    "a fake glossy texture with noise artifacts"
+  ]
+}

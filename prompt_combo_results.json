@@ -1,0 +1,14 @@
+{
+  "best_natural": {
+    "prompts": [
+      "a faithful image of natural appearance"
+    ],
+    "acc": 0.555555577079455
+  },
+  "best_unnatural": {
+    "prompts": [
+      "an unrealistic surface texture from 3D rendering"
+    ],
+    "acc": 0.5555555745959282
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "best_natural": {
+    "prompts": [
+      "a macro shot of natural details"
+    ],
+    "accuracy": 0.5483870506286621
+  },
+  "best_unnatural": {
+    "prompts": [
+      "a fake surface with blown highlights"
+    ],
+    "accuracy": 0.5645161271095276
+  }
+}

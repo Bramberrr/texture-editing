@@ -1,0 +1,22 @@
+{
+  "best_natural": {
+    "prompts": [
+      "a photo of natural material with balanced contrast",
+      "a genuine close-up of surface roughness",
+      "a faithful image of natural appearance",
+      "a natural texture image without post-processing",
+      "an authentic surface photo captured under daylight"
+    ],
+    "score": 0.002865150570869446
+  },
+  "best_unnatural": {
+    "prompts": [
+      "an unrealistic surface texture from 3D rendering",
+      "a fake glossy texture with noise artifacts",
+      "an artificial texture with unrealistic highlights",
+      "a synthetic material with unrealistic shading",
+      "an unrealistic artificial texture with clipping"
+    ],
+    "score": 0.0026351064443588257
+  }
+}

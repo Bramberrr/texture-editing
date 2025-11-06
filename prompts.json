@@ -77,6 +77,12 @@
   "fine": [
     "a fine texture"
   ],
+  "glossiness": ["A picture with high gloss"],
+  "matteness": ["A picture with matte surface"],
+  "roughness": ["A picture of dry and rough surface"],
+  "smoothness": ["A picture of soft and smooth texture"],
+  "depth": ["A picture with high contrast on heights"],
+  "flat": ["A picture with flat uniform surface"],
   "deep": [
     "a texture with strong depth and relief",
     "pronounced height variations across the surface",
@@ -96,7 +102,8 @@
     "a thin, superficial contour",
     "an almost planar texture"
   ],
-
+  "moss": [ "a texture with random star-like green moss on it"],
+  "rust": [ "a texture with random paint-like red and black rust on it"],
   "grayscale": [
     "A picture of a grayscale texture",
     "A picture of a black-and-white texture",
@@ -114,5 +121,19 @@
     "A picture of an eye-catching, colorful texture",
     "A picture of a texture with rich, vivid tones",
     "A picture of a surface bursting with saturation"
-  ]
+  ],
+  "natural": [
+    "a genuine texture showing random irregularities",
+    "a texture photograph with natural color tones",
+    "a realistic depiction of surface microstructure",
+    "a photo of natural material with balanced contrast",
+    "a photograph of surface texture with depth and realism"
+  ],
+  "unnatural": [
+    "an artificial texture with unrealistic highlights",
+    "a digitally produced texture with banding",
+    "an oversharpened image of a texture",
+    "a poorly rendered texture with visible noise",
+    "a fake glossy texture with noise artifacts"
+    ]
 }

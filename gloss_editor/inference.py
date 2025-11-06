@@ -201,6 +201,12 @@ if os.path.exists(label_path):
     with open(label_path, "r", encoding="utf-8") as f:
         labels_dict = json.load(f)
 
+caption_path = "captions.json"
+captions_dict = {}
+if os.path.exists(caption_path):
+    with open(caption_path, "r", encoding="utf-8") as f:
+        captions_dict = json.load(f)
+
 gloss_data = torch.load("trained_dirs/textcond_delta_step02000.pt")
 textcond_gloss = TextCondDelta(d_s=gloss_data["D_s"], text_dim=768, hidden=1024, edit_mask=gloss_data["edit_mask_bool"].to(device), weight_scale=0.25).to(device)
 textcond_gloss.load_state_dict(gloss_data["state_dict"])
@@ -232,10 +238,10 @@ textcond_random.load_state_dict(random_data["state_dict"])
 def CLIP_editing(generator, latent_s, weights_deltas, alpha, attr, device, text_feat=None, ws=None):
     if attr == "glossy":
         s_dir = torch.zeros_like(latent_s).to(device)
-        s_dir = textcond_gloss(latent_s,text_feat) * latent_s * 0.03
+        s_dir = textcond_gloss(latent_s,text_feat) * latent_s * 0.01
         s_dir[:,12287] = latent_s[:, 12287] * 0.2
         
-        s_dir[:,12318] = latent_s[:, 12318] * -0.05
+        # s_dir[:,12318] = latent_s[:, 12318] * -0.05
         GLOBAL_S_ANALYSIS["latent_s"].append(latent_s.detach().cpu())
         GLOBAL_S_ANALYSIS["s_dir"].append(s_dir.detach().cpu())
 
@@ -280,7 +286,7 @@ def CLIP_editing(generator, latent_s, weights_deltas, alpha, attr, device, text_
         return (img + 1) / 2
     elif attr == "depth":
         s_dir = torch.load("trained_dirs/depth.pt").unsqueeze(0).to(device) * 0.5
-        s_dir += textcond_depth(latent_s,text_feat) * latent_s * 0.05
+        s_dir += textcond_depth(latent_s,text_feat) * latent_s * 0.03
 
 
     img_clip = generator.synthesis(ss=latent_s + s_dir * alpha, weights_deltas=weights_deltas, noise_mode='const').clamp(-1, 1).squeeze(0)
@@ -295,8 +301,9 @@ def apply_bs_gradual(img, effect: str, strength: float, device):
     strength = float(strength)
     edited = img
 
-    if strength <= 0:
-        return img
+    if strength < 0:
+        return band_sifting_editing(edited, effect=effect, strength=strength).to(device)
+
 
     if strength < 2.0:
         return band_sifting_editing(edited, effect=effect, strength=strength).to(device)
@@ -325,6 +332,7 @@ def generate_caption(img):
     with torch.no_grad():
         generated = coca_clip_model.generate(img16)
         caption = open_clip.decode(generated[0]).split("<end_of_text>")[0].replace("<start_of_text>", "")
+        caption = caption.split('.')[0]
     return caption
 
 @torch.no_grad()
@@ -357,7 +365,8 @@ def run_inference(filename, method, strength, pt_dir="real_latent", attr="glossy
     elif method == "bs-metal":
         edited = apply_bs_gradual(img, effect="metal", strength=strength, device=device)
     elif method == "clip-styleGAN":
-        edited = CLIP_editing(generator, s_code, weights_deltas, strength, attr, device, text_feat,data["ws"].to(device))
+        w = data["ws"].to(device) if isinstance(data, dict) and "ws" in data else None
+        edited = CLIP_editing(generator, s_code, weights_deltas, strength, attr, device, text_feat, w)
     else:
         edited = img
 
@@ -376,18 +385,25 @@ def run_inference(filename, method, strength, pt_dir="real_latent", attr="glossy
     stsim = stsim_loss(img.unsqueeze(0).double(), edited.unsqueeze(0).double()).item()
     sw = slicing_loss(vgg(img.unsqueeze(0)), vgg(edited.unsqueeze(0))).item()
 
-    artifact_ok, guard_info = artifact_check_tensor(edited)
+    hist, skew_full, skew_inner = compute_luminance_histogram_and_skew(edited, save_path=hist_path)
+    caption_base = captions_dict.get(filename+".png", [])
+    caption = generate_caption(edited)
+
+    sim_nat = get_clip_similarity(img, feat_dict["natural"], clip_model, device).item()
+    sim_un = get_clip_similarity(img, feat_dict["unnatural"], clip_model, device).item()
+    print(sim_nat, sim_un)
+    offset = sim_nat - sim_un - 0.01 if sim_nat -0.01 < sim_un else 0.0
+    artifact_ok, guard_info = artifact_check_tensor(edited, clip_model, tokenizer, device, caption_base, caption)
     nat = bool(artifact_ok)
     # nat = True
 
     # log + persist guard info if it failed (shows in Django runserver logs; also saved as JSON)
-    if not nat:
+    if True:
         logger.warning(
             "ARTIFACT_GUARD_FAIL file=%s method=%s strength=%s attr=%s guard=%s",
             filename, method, str(strength), attr, json.dumps(guard_info)
         )
-    hist, skew_full, skew_inner = compute_luminance_histogram_and_skew(edited, save_path=hist_path)
-    caption = generate_caption(edited)
+    
 
     return (
         f"/{img_path}",
@@ -406,7 +422,71 @@ def run_inference(filename, method, strength, pt_dir="real_latent", attr="glossy
 # artifact_check (tensor-only, minimal)
 # =========================================
 @torch.no_grad()
-def artifact_check_tensor(img_tensor):
+def artifact_check_tensor(
+    img_tensor,
+    clip_model=clip_model,
+    tokenizer=open_clip.get_tokenizer("ViT-L-14"),
+    device=device,
+    caption_base=None,
+    caption = None,
+    offset = 0.0
+):
+    """
+    CLIP-based classifier for unnatural artifacts.
+    Adds semantic-drift (caption similarity) detection.
+    Returns (ok: bool, info: dict)
+    """
+
+    with torch.no_grad():
+        sim_nat = get_clip_similarity(img_tensor, feat_dict["natural"], clip_model, device).item()
+        sim_un = get_clip_similarity(img_tensor, feat_dict["unnatural"], clip_model, device).item()
+        score = sim_nat - sim_un - offset
+    # --- interpret score
+    ok = score > 0
+    confidence = abs(score)
+
+    # === Caption semantic similarity ===
+    if caption_base is not None:
+        # use same tokenizer
+        tok1 = tokenizer([caption_base]).to(device)
+        tok2 = tokenizer([caption]).to(device)
+        txt1 = F.normalize(clip_model.encode_text(tok1), dim=-1)
+        txt2 = F.normalize(clip_model.encode_text(tok2), dim=-1)
+        caption_sim = (txt1 @ txt2.T).item()
+    else:
+        caption_sim = 1.0  # assume perfect match if no base caption
+
+    # --- combine signals
+    sem_drift = caption_sim < 0.7   # threshold for semantic change
+    if sem_drift:
+        ok = False
+
+    # --- fallback when uncertain
+    if confidence < 0.003:
+        fallback_ok, fallback_info = _legacy_artifact_guard(img_tensor)
+        ok = fallback_ok and not sem_drift
+    else:
+        fallback_info = None
+
+    info = {
+        "guard": {
+            "score": round(float(score), 4),
+            "sim_natural": round(float(sim_nat), 4),
+            "sim_unnatural": round(float(sim_un), 4),
+            "caption_similarity": round(float(caption_sim), 4),
+            "semantic_drift": sem_drift,
+            "confidence": round(float(confidence), 4),
+            "status": "ok" if ok else "artifact_detected",
+            "method": "CLIP-naturalness+caption",
+            "fallback_used": fallback_info is not None
+        }
+    }
+    if fallback_info:
+        info["fallback"] = fallback_info
+
+    return ok, info
+
+def _legacy_artifact_guard(img_tensor):
     if img_tensor.dim() == 4:
         img_tensor = img_tensor[0]
     gray = (0.299 * img_tensor[0] + 0.587 * img_tensor[1] + 0.114 * img_tensor[2]).float().clamp(0,1)
@@ -422,121 +502,13 @@ def artifact_check_tensor(img_tensor):
     h254, h255 = float(hist[254].item()), float(hist[255].item())
     jump_ratio = float(h255 / (h254 + 1e-8))
 
-    # 2) Frequency / grain
-    F2 = torch.fft.fftshift(torch.fft.fft2(gray))
-    P2 = (F2.real**2 + F2.imag**2)
-    P2 = P2 / (P2.sum() + 1e-8)
-    yy, xx = torch.meshgrid(
-        torch.linspace(-0.5, 0.5, H, device=device),
-        torch.linspace(-0.5, 0.5, W, device=device),
-        indexing='ij'
-    )
-    r = torch.sqrt(xx**2 + yy**2)
-    hf_ratio = float(P2[r > 0.35].sum().item() / (P2[r <= 0.35].sum().item() + 1e-8))
 
-    mean = float(gray.mean().item())
-    std  = float(gray.std().item() + 1e-8)
-    bright_density = float((gray > (mean + 3.0 * std)).float().mean().item())
-
-    r_bins = torch.linspace(0, 0.5, 64, device=device)
-    radial_p = []
-    for i in range(len(r_bins)-1):
-        m = (r >= r_bins[i]) & (r < r_bins[i+1])
-        radial_p.append(float(P2[m].mean().item()) if m.any() else 0.0)
-    radial_p = np.asarray(radial_p, dtype=np.float64)
-    if (radial_p > 0).sum() >= 3:
-        logf = np.log(np.arange(1, len(radial_p)+1))
-        logp = np.log(radial_p + 1e-12)
-        slope = float(np.polyfit(logf, logp, 1)[0])
-    else:
-        slope = 0.0
-
-    kt = float(kurtosis(gray.cpu().numpy().ravel()))
-
-    # 3) Edge/saturation interaction
-    sobel_x = torch.tensor([[1,0,-1],[2,0,-2],[1,0,-1]], dtype=torch.float32, device=device).view(1,1,3,3)
-    sobel_y = torch.tensor([[1,2,1],[0,0,0],[-1,-2,-1]], dtype=torch.float32, device=device).view(1,1,3,3)
-    gx = F.conv2d(g, sobel_x, padding=1)
-    gy = F.conv2d(g, sobel_y, padding=1)
-    grad_mag = torch.sqrt(gx*gx + gy*gy).squeeze()
-    sat_edge_ratio = float(((gray >= 0.995) & (grad_mag >= (grad_mag.mean() + 1.5*grad_mag.std()))).float().mean().item())
-
-    # 4) Isolated bright hotspots
-    nbr_kernel = torch.ones((1,1,3,3), device=device)
-    bright_mask = (g >= 0.98).float()
-    neigh = F.conv2d(bright_mask, nbr_kernel, padding=1).squeeze()
-    hotspot_isolated_ratio = float(((gray >= 0.98) & (neigh <= 2)).float().mean().item())
-
-    # 5) Banding score
-    h = (hist.cpu().numpy().astype(np.float64))
-    h = h / (h.sum() + 1e-12)
-    d2 = np.diff(h, n=2)
-    banding_score = float(np.sqrt((d2**2).mean()))
-
-    # 6) Blockiness (fixed)
-    block = 8
-    if W >= (block + 1):
-        cols_right = gray[:, block::block]
-        cols_left  = gray[:, block-1:W:block]
-        m = min(cols_right.shape[1], cols_left.shape[1])
-        dv = torch.abs(cols_right[:, :m] - cols_left[:, :m]).mean().item()
-    else:
-        dv = 0.0
-    if H >= (block + 1):
-        rows_bottom = gray[block::block, :]
-        rows_top    = gray[block-1:H:block, :]
-        m = min(rows_bottom.shape[0], rows_top.shape[0])
-        dh = torch.abs(rows_bottom[:m, :] - rows_top[:m, :]).mean().item()
-    else:
-        dh = 0.0
-    intra_v = torch.abs(gray[:, 1:] - gray[:, :-1]).mean().item() if W > 1 else 0.0
-    intra_h = torch.abs(gray[1:, :] - gray[:-1, :]).mean().item() if H > 1 else 0.0
-    denom = (intra_v + intra_h) / 2.0 + 1e-6
-    blockiness = float((dv + dh) / 2.0 / denom)
-
-    # 7) Laplacian overshoot
-    lap_kernel = torch.tensor([[0,-1,0],[-1,4,-1],[0,-1,0]], dtype=torch.float32, device=device).view(1,1,3,3)
-    lap = F.conv2d(g, lap_kernel, padding=1).squeeze().abs()
-    thr = float(lap.mean().item() + 2.0 * lap.std().item())
-    laplacian_overshoot_ratio = float((lap > thr).float().mean().item())
-
-    # 8) Bright & locally high variance
-    k5 = torch.ones((1,1,5,5), device=device) / 25.0
-    mu = F.conv2d(g, k5, padding=2)
-    mu2 = F.conv2d(g*g, k5, padding=2)
-    local_var = (mu2 - mu*mu).clamp_min(0).squeeze()
-    lv_thr = float(local_var.mean().item() + 2.0 * local_var.std().item())
-    bright_highvar_ratio = float(((gray > mean + 2.0*std) & (local_var > lv_thr)).float().mean().item())
-
-    # 9) Gradient orientation entropy
-    eps = 1e-8
-    theta = torch.atan2(gy + eps, gx + eps).squeeze().cpu().numpy().ravel()
-    mag = grad_mag.cpu().numpy().ravel()
-    mask = mag > (mag.mean() + 0.5 * mag.std())
-    if mask.sum() > 100:
-        bins = np.linspace(-np.pi, np.pi, 37)
-        h_orient, _ = np.histogram(theta[mask], bins=bins)
-        p = h_orient / (h_orient.sum() + 1e-12)
-        grad_orient_entropy = float(-(p * np.log(p + 1e-12)).sum() / np.log(len(p) + 1e-12))
-    else:
-        grad_orient_entropy = 0.0
-
-    score = 0.0 * frac255 + 0.035 * jump_ratio + 0.06 * slope + 0.2 * kt + 0.11 * sat_edge_ratio + 0.02 * hotspot_isolated_ratio + 0.35 * blockiness + 0.07 * bright_highvar_ratio + 0.26 * grad_orient_entropy
-    ok = score < 0.5
+    score = 0.15 * jump_ratio
+    ok = score < 1.0
     d = {
         "guard": {
             "frac255": frac255,
             "jump_ratio": jump_ratio,
-            "hf_ratio": hf_ratio,
-            "bright_density": bright_density,
-            "slope": slope,
-            "kurtosis": kt,
-            "hotspot_isolated_ratio": hotspot_isolated_ratio,
-            "banding_score": banding_score,
-            "blockiness": blockiness,
-            "laplacian_overshoot_ratio": laplacian_overshoot_ratio,
-            "bright_highvar_ratio": bright_highvar_ratio,
-            "grad_orient_entropy": grad_orient_entropy,
             "score": score,
             "status": "ok" if ok else "artifact_detected"
         }

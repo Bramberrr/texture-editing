@@ -1,0 +1,22 @@
+{
+  "best_natural": {
+    "accuracy": 0.5483870506286621,
+    "prompts": [
+      "a macro shot of natural details",
+      "a faithful image of natural appearance",
+      "a natural surface with organic variation",
+      "a true photograph of real material",
+      "a natural close-up photo with realistic lighting"
+    ]
+  },
+  "best_unnatural": {
+    "accuracy": 0.5806451439857483,
+    "prompts": [
+      "a synthetic texture with visible artifacts",
+      "an artificial texture with unrealistic highlights",
+      "a fake glossy texture with noise artifacts",
+      "a synthetic texture exhibiting edge halos",
+      "an unrealistic surface texture from 3D rendering"
+    ]
+  }
+}
